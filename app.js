@@ -12,19 +12,19 @@ const html = htm.bind(React.createElement);
 /* ------------------------------------------------------------------ */
 const M = {
   // Glutes and legs
-  "hip-thrust":         { name: "Barbell hip thrust", inc: 2.5 },
+  "hip-thrust":         { name: "Barbell hip thrust", inc: 2.5, bar: true },
   "smith-hip-thrust":   { name: "Smith machine hip thrust", inc: 2.5 },
   "machine-hip-thrust": { name: "Hip thrust machine", inc: 5 },
   "sl-hip-thrust":      { name: "Single-leg hip thrust", inc: 2.5 },
   "bss":                { name: "Bulgarian split squat", inc: 2 },
   "reverse-lunge":      { name: "Deficit reverse lunge", inc: 2 },
   "walking-lunge":      { name: "Walking lunge", inc: 2 },
-  "leg-press":          { name: "Leg press, feet high and wide", inc: 5 },
+  "leg-press":          { name: "Leg press", inc: 5 },
   "hack-squat":         { name: "Hack squat", inc: 5 },
-  "smith-squat":        { name: "Smith squat, feet forward", inc: 2.5 },
-  "rdl":                { name: "Romanian deadlift", inc: 2.5 },
+  "smith-squat":        { name: "Smith squat", inc: 2.5 },
+  "rdl":                { name: "Romanian deadlift", inc: 2.5, bar: true },
   "db-rdl":             { name: "Dumbbell Romanian deadlift", inc: 2 },
-  "sumo":               { name: "Sumo deadlift", inc: 2.5 },
+  "sumo":               { name: "Sumo deadlift", inc: 2.5, bar: true },
   "b-stance-rdl":       { name: "B-stance RDL", inc: 2 },
   "hyperext":           { name: "45° hyperextension", inc: 2.5, bwOk: true },
   "pull-through":       { name: "Cable pull-through", inc: 2.5 },
@@ -45,11 +45,11 @@ const M = {
   "meadows":            { name: "Meadows row", inc: 2.5 },
   "cs-db-row":          { name: "Chest-supported dumbbell row", inc: 2 },
   "cs-row":             { name: "Chest-supported T-bar row", inc: 2.5 },
-  "seal-row":           { name: "Seal row", inc: 2.5 },
+  "seal-row":           { name: "Seal row", inc: 2.5, bar: true },
   "machine-row":        { name: "Machine row", inc: 5 },
   "cable-row":          { name: "Seated cable row", inc: 2.5 },
-  "barbell-row":        { name: "Barbell row", inc: 2.5 },
-  "pendlay":            { name: "Pendlay row", inc: 2.5 },
+  "barbell-row":        { name: "Barbell row", inc: 2.5, bar: true },
+  "pendlay":            { name: "Pendlay row", inc: 2.5, bar: true },
   "straight-arm":       { name: "Straight-arm pulldown", inc: 1.25 },
   "face-pull":          { name: "Face pull", inc: 1.25 },
   "rear-delt-fly":      { name: "Reverse pec deck", inc: 2.5 },
@@ -76,7 +76,7 @@ const M = {
 /* moves[0] is the default; the rest are swaps.                        */
 /* ------------------------------------------------------------------ */
 const DAYS = [
-  { id: 1, dow: 1, name: "Back", focus: "Width",
+  { id: 1, dow: 1, name: "Wingspan", focus: "Back for width",
     intro: "Lats lead today. Pulldowns go first while you're fresh.",
     cardio: "Rowing pairs well with back day.",
     slots: [
@@ -93,7 +93,7 @@ const DAYS = [
       { id: "1f", moves: ["face-pull", "rear-delt-fly", "cable-rear-delt"], sets: 3, reps: [15, 20], rest: 60,
         cue: "Pull towards your eyebrows with elbows high, then rotate your hands back." },
     ] },
-  { id: 2, dow: 2, name: "Glutes heavy", focus: "Hip thrust",
+  { id: 2, dow: 2, name: "Foundation", focus: "Heavy glutes",
     intro: "Your heaviest glute lift of the week, then deep single-leg work.",
     cardio: "Stairmaster or incline walk.",
     slots: [
@@ -106,7 +106,7 @@ const DAYS = [
       { id: "2d", moves: ["machine-abduction", "cable-abduction"], sets: 3, reps: [12, 20], rest: 60,
         cue: "Lean forward over your thighs to bias the upper glutes. Pause wide, control the return." },
     ] },
-  { id: 3, dow: 3, name: "Shoulders and abs", focus: "Side delts",
+  { id: 3, dow: 3, name: "Caps", focus: "Shoulders and abs",
     intro: "Shoulder width comes from the side delts, so they get most of today's sets.",
     cardio: "Steady incline walk.",
     slots: [
@@ -123,7 +123,7 @@ const DAYS = [
       { id: "3f", moves: ["hlr", "ab-wheel"], sets: 3, reps: [8, 15], rest: 60,
         cue: "No swinging. Curl your pelvis up at the top and lower slowly." },
     ] },
-  { id: 4, dow: 4, name: "Glutes hinge", focus: "Stretch",
+  { id: 4, dow: 4, name: "Stretch", focus: "Glutes and hamstrings",
     intro: "One heavy hinge, then glutes and hamstrings trained in the stretch.",
     cardio: "Stairmaster. Try a few minutes sideways.",
     slots: [
@@ -138,7 +138,7 @@ const DAYS = [
       { id: "4e", moves: ["cable-abduction", "machine-abduction"], sets: 2, reps: [15, 20], rest: 60, uni: "leg",
         cue: "Ankle strap on the low pulley, lean towards the stack, sweep out and slightly back." },
     ] },
-  { id: 5, dow: 5, name: "Back and abs", focus: "Thickness",
+  { id: 5, dow: 5, name: "Armour", focus: "Back thickness and abs",
     intro: "Mid-back thickness. Every row is supported, so your lower back gets a rest.",
     cardio: "Rowing or cycling.",
     slots: [
@@ -155,7 +155,7 @@ const DAYS = [
       { id: "5f", moves: ["pallof"], sets: 2, reps: [10, 12], rest: 45, uni: "side",
         cue: "Press straight out and hold for two seconds without letting the cable twist you." },
     ] },
-  { id: 6, dow: 6, name: "Glutes pump", focus: "Upper glutes",
+  { id: 6, dow: 6, name: "Shelf", focus: "Upper glutes",
     intro: "Lighter thrusts, then the most abduction of your week for the shelf.",
     cardio: "Stairmaster or incline walk.",
     slots: [
@@ -239,9 +239,51 @@ function useStored(key, fallback, onFail) {
 }
 
 const DEFAULT_TARGETS = { calories: 2400, protein: 140, carbs: 300, fat: 70 };
+const ALL_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
+const ACCENTS = {
+  rose: { name: "Rose", hex: "#FF7096" },
+  orchid: { name: "Orchid", hex: "#D59BFF" },
+  peach: { name: "Peach", hex: "#FFA985" },
+  ice: { name: "Ice", hex: "#8CCBFF" },
+};
+const REST_OPTIONS = [45, 60, 75, 90, 120, 150, 180, 240];
 function defaultSettings() {
   return { blockStart: mondayOf(todayISO()), blockOffset: 0, loadWeeks: 4, sound: true, vibrate: true, wakeLock: true,
-    cycleStart: "", cycleLength: 28, targets: DEFAULT_TARGETS, migratedAt: null };
+    cycleStart: "", cycleLength: 28, targets: DEFAULT_TARGETS, migratedAt: null,
+    accent: "rose", haptics: true, autoScroll: true, warmups: true, showFood: true,
+    barWeight: 20, plates: ALL_PLATES, dayNames: {}, exNames: {}, rest: {} };
+}
+
+/* Display names. Custom names are set from Settings and the exercise sheet;
+   history is keyed by movement ID, so renaming never touches it. */
+const CUSTOM = { ex: {}, day: {} };
+const exName = (k) => CUSTOM.ex[k] || (M[k] ? M[k].name : k);
+const dayName = (d) => CUSTOM.day[d.id] || d.name;
+const buzz = (on, pattern) => { if (on && navigator.vibrate) { try { navigator.vibrate(pattern); } catch (e) { /* ignore */ } } };
+
+/* Plates per side for a barbell total, using the plates you have. */
+function platesFor(total, bar, avail) {
+  const per = Math.round(((total - bar) / 2) * 100) / 100;
+  if (per < 0) return null;
+  const list = [];
+  let left = per;
+  avail.slice().sort((a, b) => b - a).forEach((p) => { while (left >= p - 1e-9) { list.push(p); left = Math.round((left - p) * 100) / 100; } });
+  return { per: per, list: list, left: left };
+}
+
+/* Warm-up ramp towards the first working weight. Not logged. */
+function warmupsFor(w, mv, st) {
+  if (!w) return [];
+  const bar = mv.bar ? st.barWeight : 0;
+  const smallest = mv.bar ? 5 : (mv.inc || 1); // round warm-ups to friendly jumps
+  const round = (x) => Math.max(bar, Math.round(x / smallest) * smallest);
+  const plan = mv.bar ? [[0, 10], [0.5, 6], [0.7, 4], [0.85, 2]] : [[0.5, 8], [0.7, 4], [0.85, 2]];
+  const out = [];
+  plan.forEach((p) => {
+    const x = p[0] === 0 ? bar : round(w * p[0]);
+    if (x > 0 && x < w && !out.some((o) => o.w === x)) out.push({ w: x, r: p[1], bar: p[0] === 0 });
+  });
+  return out;
 }
 
 /* One-off: bring v1 data across. Old keys are left in place untouched. */
@@ -438,6 +480,7 @@ function useToday() {
 const Icon = {
   check: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   back: html`<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  down: html`<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   train: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
   progress: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 18l6-6 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
   settings: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
@@ -468,19 +511,35 @@ function Sheet({ open, onClose, title, children }) {
 
 function Toast({ toast }) {
   if (!toast) return null;
-  return html`<div className=${"toast" + (toast.kind === "pr" ? " toast-pr" : "")} role="status">${toast.msg}</div>`;
+  return html`<div className="toast" role="status">${toast.msg}</div>`;
+}
+
+/* The PR moment: a brass slab drops in with the number. Tap to dismiss. */
+function PrBurst({ pr, onClose }) {
+  useEffect(() => {
+    if (!pr) return;
+    const id = setTimeout(onClose, 4500);
+    return () => clearTimeout(id);
+  }, [pr]);
+  if (!pr) return null;
+  return html`
+    <button key=${pr.id} className="pr-burst" onClick=${onClose} aria-live="polite">
+      <span className="pr-burst-label">New personal record</span>
+      <span className="display pr-burst-num">${pr.big}</span>
+      <span className="pr-burst-name">${pr.line}</span>
+    </button>`;
 }
 
 function Toggle({ label, hint, checked, onChange }) {
   return html`
     <label className="toggle-row">
       <span><span className="toggle-label">${label}</span>${hint ? html`<span className="hint">${hint}</span>` : null}</span>
-      <input type="checkbox" className="switch" checked=${checked} onChange=${(e) => onChange(e.target.checked)} />
+      <input type="checkbox" className="switch" checked=${!!checked} onChange=${(e) => onChange(e.target.checked)} />
     </label>`;
 }
 
-/* The rest timer slab. The rose fill drains as rest runs out; the text is
-   drawn twice and clipped so it stays readable on both halves. */
+/* The rest timer slab. The fill drains as rest runs out; the text is drawn
+   twice and clipped so it stays readable on both halves. */
 function TimerBar({ timer, setTimer, settings, raised }) {
   const [now, setNow] = useState(Date.now());
   const alerted = useRef(null);
@@ -494,9 +553,9 @@ function TimerBar({ timer, setTimer, settings, raised }) {
   useEffect(() => {
     if (!finished || alerted.current === timer.endAt) return;
     alerted.current = timer.endAt;
-    if (now - timer.endAt < 5000) { // don't beep for a timer that ran out while the app was closed
+    if (now - timer.endAt < 5000) { // no alarm for a timer that ran out while the app was closed
       if (settings.sound) beep();
-      if (settings.vibrate && navigator.vibrate) navigator.vibrate([220, 120, 220]);
+      buzz(settings.vibrate, [220, 120, 220]);
     }
     const id = setTimeout(() => setTimer((t) => (t && t.endAt === timer.endAt ? null : t)), 20000);
     return () => clearTimeout(id);
@@ -545,18 +604,22 @@ function WeekStrip({ b }) {
     </div>`;
 }
 
-function Home({ today, b, settings, setSettings, sessions, food, setFood, openDay, swaps }) {
+const moveOfSlot = (slot, swaps) => (swaps[slot.id] && M[swaps[slot.id]] ? swaps[slot.id] : slot.moves[0]);
+function setsToday(day, swaps, logs, today) {
+  return day.slots.reduce((n, slot) => { const k = moveOfSlot(slot, swaps); return n + doneSets(logs[k] && logs[k][today]).length; }, 0);
+}
+
+function Home({ today, b, settings, setSettings, sessions, logs, food, setFood, openDay, swaps }) {
   const weekStart = mondayOf(today), weekEnd = addDays(weekStart, 6);
   const doneOn = (id) => sessions.filter((s) => s.day === id && s.date >= weekStart && s.date <= weekEnd).map((s) => s.date).sort().pop();
   const dow = parse(today).getDay();
   const todays = DAYS.find((d) => d.dow === dow);
   const pending = DAYS.filter((d) => !doneOn(d.id));
   const hero = todays && !doneOn(todays.id) ? todays : pending.find((d) => d.dow > dow) || pending[0] || null;
-  const heroLead = !hero ? "Week complete" : hero === todays ? WEEKDAYS[dow] : todays ? "Up next" : "Rest day. Up next";
+  const heroLead = !hero ? "Week complete" : hero === todays ? WEEKDAYS[dow] + ", " + hero.focus.toLowerCase() : (todays ? "Up next, " : "Rest day. Up next, ") + hero.focus.toLowerCase();
+  const logged = hero ? setsToday(hero, swaps, logs, today) : 0;
   const cyc = cycleInfo(settings, today);
   const [foodOpen, setFoodOpen] = useState(false);
-  const moveName = (slot) => M[swaps[slot.id]] ? M[swaps[slot.id]].name : M[slot.moves[0]].name;
-
   const deloadNow = () => setSettings((s) => Object.assign({}, s, { blockStart: addDays(mondayOf(today), -7 * b.loadWeeks), blockOffset: b.block - 1 }));
 
   return html`
@@ -566,12 +629,15 @@ function Home({ today, b, settings, setSettings, sessions, food, setFood, openDa
       <section className="hero" aria-labelledby="hero-name">
         <p className="hero-lead">${heroLead}</p>
         ${hero ? html`
-          <h1 id="hero-name" className="display hero-name">${hero.name}</h1>
+          <h1 id="hero-name" className="display hero-name">${dayName(hero)}</h1>
           <p className="hero-focus">${hero.intro}</p>
-          <p className="hero-list">${hero.slots.map((sl, i) => (i ? inSentence(moveName(sl)) : moveName(sl))).join(", ")}.</p>
-          <button className="primary" onClick=${() => openDay(hero.id)}>Start session</button>` : html`
+          <p className="hero-list">${hero.slots.map((sl, i) => (i ? inSentence(exName(moveOfSlot(sl, swaps))) : exName(moveOfSlot(sl, swaps)))).join(", ")}.</p>
+          <div className="hero-cta">
+            <button className="primary" onClick=${() => openDay(hero.id)}>${logged ? "Resume session" : "Start session"}</button>
+            ${logged ? html`<span className="hint">${logged} ${logged === 1 ? "set" : "sets"} logged so far</span>` : null}
+          </div>` : html`
           <h1 id="hero-name" className="display hero-name">All six done</h1>
-          <p className="hero-focus">Rest up. Next week's first session is back day.</p>`}
+          <p className="hero-focus">Rest up. Next week opens with ${dayName(DAYS[0])}.</p>`}
       </section>
 
       <section className=${"block" + (b.deload ? " block-deload" : "")} aria-label="Training block">
@@ -594,7 +660,7 @@ function Home({ today, b, settings, setSettings, sessions, food, setFood, openDa
               <li key=${d.id}>
                 <button className=${"day-row" + (done ? " is-done" : "") + (d.dow === dow ? " is-today" : "")} onClick=${() => openDay(d.id)}>
                   <span className="day-dow">${WEEKDAYS[d.dow].slice(0, 3)}</span>
-                  <span className="day-text"><span className="day-name">${d.name}</span><span className="day-focus">${d.focus}</span></span>
+                  <span className="day-text"><span className="day-name">${dayName(d)}</span><span className="day-focus">${d.focus}</span></span>
                   <span className="day-state">${done ? html`<span className="done-mark">${Icon.check}<span className="sr">Done ${fmtDay(done)}</span></span>` : null}</span>
                 </button>
               </li>`;
@@ -610,7 +676,7 @@ function Home({ today, b, settings, setSettings, sessions, food, setFood, openDa
           <p className="hint">Next period due in about ${cyc.next} ${cyc.next === 1 ? "day" : "days"}.</p>
         </section>` : null}
 
-      <${FoodPanel} today=${today} food=${food} setFood=${setFood} targets=${settings.targets} open=${foodOpen} setOpen=${setFoodOpen} />
+      ${settings.showFood ? html`<${FoodPanel} today=${today} food=${food} setFood=${setFood} targets=${settings.targets} open=${foodOpen} setOpen=${setFoodOpen} />` : null}
     </main>`;
 }
 
@@ -657,44 +723,171 @@ function FoodPanel({ today, food, setFood, targets, open, setOpen }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Share card: a 1080×1920 story image of the session                  */
+/* ------------------------------------------------------------------ */
+async function drawShareCard(d) {
+  const W = 1080, H = 1920, P = 96;
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const DF = "'Big Shoulders Display', 'Arial Narrow', sans-serif", TF = "'Hanken Grotesk', system-ui, sans-serif";
+  try { await Promise.all([document.fonts.load("800 200px 'Big Shoulders Display'"), document.fonts.load("600 40px 'Hanken Grotesk'"), document.fonts.load("700 40px 'Hanken Grotesk'")]); } catch (e) { /* fall back to system fonts */ }
+  g.fillStyle = "#26141C"; g.fillRect(0, 0, W, H);
+  g.fillStyle = "#CDAAB4"; g.font = "600 42px " + TF; g.fillText(d.dateLabel, P, 190);
+
+  // Day name, as large as fits on up to two lines
+  const words = d.title.split(" ");
+  let lines = [d.title], size = 330;
+  const widest = (ls, s) => { g.font = "800 " + s + "px " + DF; return Math.max.apply(null, ls.map((l) => g.measureText(l).width)); };
+  if (widest(lines, size) > W - 2 * P && words.length > 1) {
+    let best = null;
+    for (let i = 1; i < words.length; i++) {
+      const ls = [words.slice(0, i).join(" "), words.slice(i).join(" ")];
+      const w = widest(ls, size);
+      if (!best || w < best.w) best = { ls: ls, w: w };
+    }
+    lines = best.ls;
+  }
+  while (size > 120 && widest(lines, size) > W - 2 * P) size -= 10;
+  g.fillStyle = "#F7EAEB"; g.font = "800 " + size + "px " + DF;
+  let y = 250 + size * 0.86;
+  lines.forEach((l) => { g.fillText(l, P - 6, y); y += size * 0.86; });
+  g.fillStyle = "#CDAAB4"; g.font = "500 48px " + TF; g.fillText(d.focus, P, y + 20);
+
+  // Stats and top sets sit on the band at the bottom
+  const tops = d.tops.slice(0, 6);
+  y = H - 220 - 70 - tops.length * 118 - 120;
+  const stats = [[String(d.sets), "sets"], [Math.round(d.vol).toLocaleString("en-GB"), "kg lifted"]];
+  if (d.mins) stats.push([String(d.mins), "minutes"]);
+  let numSize = 150, widths;
+  const measure = () => stats.map((s) => { g.font = "800 " + numSize + "px " + DF; const a = g.measureText(s[0]).width; g.font = "600 40px " + TF; return Math.max(a, g.measureText(s[1]).width); });
+  widths = measure();
+  while (numSize > 90 && widths.reduce((t, w) => t + w, 0) + 80 * (stats.length - 1) > W - 2 * P) { numSize -= 10; widths = measure(); }
+  let x = P;
+  stats.forEach((s, i) => {
+    g.fillStyle = "#F7EAEB"; g.font = "800 " + numSize + "px " + DF; g.fillText(s[0], x - 4, y);
+    g.fillStyle = "#CDAAB4"; g.font = "600 40px " + TF; g.fillText(s[1], x, y + 58);
+    x += widths[i] + 80;
+  });
+
+  // Top sets, PRs in brass
+  y += 120;
+  g.strokeStyle = "#573444"; g.lineWidth = 2;
+  tops.forEach((t) => {
+    g.beginPath(); g.moveTo(P, y); g.lineTo(W - P, y); g.stroke();
+    y += 78;
+    g.fillStyle = t.pr ? "#F0C27B" : "#F7EAEB"; g.font = "600 44px " + TF;
+    let name = t.name; while (g.measureText(name).width > 560 && name.length > 4) name = name.slice(0, -2);
+    g.fillText(name === t.name ? name : name + "…", P, y);
+    g.font = "800 64px " + DF; g.textAlign = "right";
+    g.fillText((t.pr ? "PR  " : "") + t.set, W - P, y + 4);
+    g.textAlign = "left";
+    y += 40;
+  });
+
+  // Accent band
+  g.fillStyle = d.accent; g.fillRect(0, H - 220, W, 220);
+  g.fillStyle = "#2A0F18"; g.font = "700 42px " + TF; g.fillText(d.blockLine, P, H - 100);
+  g.font = "800 64px " + DF; g.textAlign = "right"; g.fillText("Sculptor", W - P, H - 96); g.textAlign = "left";
+  return new Promise((res) => c.toBlob(res, "image/png"));
+}
+
+async function shareSession(d, notify) {
+  const blob = await drawShareCard(d);
+  if (!blob) { notify("Couldn't draw the card on this device."); return; }
+  const file = new File([blob], "sculptor-" + d.date + ".png", { type: "image/png" });
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try { await navigator.share({ files: [file], title: d.title }); } catch (e) { /* share sheet closed */ }
+    return;
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = file.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+  notify("Card saved to your downloads.");
+}
+
+/* ------------------------------------------------------------------ */
 /* Session screen                                                      */
 /* ------------------------------------------------------------------ */
-function DayView({ day, today, b, logs, setLogs, swaps, setSwaps, sessions, setSessions, cardio, setCardio, startTimer, notify, settings, onBack }) {
+function DayView({ day, today, b, logs, setLogs, swaps, setSwaps, sessions, setSessions, cardio, setCardio, startTimer, notify, onPR, settings, setSettings, onBack }) {
   useWakeLock(settings.wakeLock);
-  const [swapSlot, setSwapSlot] = useState(null);
+  const [optSlot, setOptSlot] = useState(null);
   const [summary, setSummary] = useState(null);
-  const moveOf = (slot) => (swaps[slot.id] && M[swaps[slot.id]] ? swaps[slot.id] : slot.moves[0]);
+  const moveOf = (slot) => moveOfSlot(slot, swaps);
+  const restOf = (slot) => settings.rest[slot.id] || slot.rest;
   const already = sessions.find((s) => s.day === day.id && s.date === today);
   const cardioKey = today + ":" + day.id;
-  const dowName = WEEKDAYS[parse(today).getDay()];
+
+  const planned = day.slots.reduce((n, slot) => {
+    const e = logs[moveOf(slot)] && logs[moveOf(slot)][today];
+    return n + Math.max(b.deload ? Math.ceil(slot.sets / 2) : slot.sets, e ? e.sets.length : 0);
+  }, 0);
+  const doneN = setsToday(day, swaps, logs, today);
+
+  const advance = (i) => {
+    if (!settings.autoScroll) return;
+    const next = document.querySelectorAll(".dayview .ex")[i + 1] || document.querySelector(".dayview .cardio-row");
+    if (next) next.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   const finish = () => {
-    let sets = 0, vol = 0;
-    day.slots.forEach((slot) => {
-      const d = doneSets(logs[moveOf(slot)] && logs[moveOf(slot)][today]);
-      sets += d.length; vol += volumeOf(d);
-    });
+    let sets = 0, vol = 0, times = [];
     const keys = day.slots.map(moveOf);
     const prs = prEvents(logs).filter((p) => p.date === today && keys.indexOf(p.key) !== -1);
+    const tops = [];
+    keys.forEach((k) => {
+      const e = logs[k] && logs[k][today];
+      const d = doneSets(e);
+      if (!d.length) return;
+      sets += d.length; vol += volumeOf(d);
+      (e.sets || []).forEach((s) => { if (s.done && s.t) times.push(s.t); });
+      const t = topSet(d);
+      tops.push({ name: exName(k), set: (t.w ? fmtNum(t.w) + " × " : "") + t.r + (t.w ? "" : " reps"), pr: prs.some((p) => p.key === k) });
+    });
+    const mins = times.length > 1 ? Math.max(1, Math.round((Math.max.apply(null, times) - Math.min.apply(null, times)) / 60000)) : null;
     setSessions((prev) => prev.filter((s) => !(s.day === day.id && s.date === today))
-      .concat([{ day: day.id, date: today, ts: Date.now(), block: b.block, week: b.week + 1, deload: b.deload }]));
-    setSummary({ sets: sets, vol: vol, prs: prs });
+      .concat([{ day: day.id, date: today, ts: Date.now(), block: b.block, week: b.week + 1, deload: b.deload, mins: mins }]));
+    setSummary({ sets: sets, vol: vol, prs: prs, mins: mins, tops: tops });
   };
+
+  const share = () => shareSession({
+    date: today, title: dayName(day), focus: day.focus,
+    dateLabel: parse(today).toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" }),
+    sets: summary.sets, vol: summary.vol, mins: summary.mins, tops: summary.tops,
+    blockLine: b.deload ? "Block " + b.block + ", deload week" : "Block " + b.block + ", week " + (b.week + 1),
+    accent: (ACCENTS[settings.accent] || ACCENTS.rose).hex,
+  }, notify);
+
+  const optMove = optSlot ? moveOf(optSlot) : null;
+  const [nameDraft, setNameDraft] = useState("");
+  useEffect(() => { if (optMove) setNameDraft(settings.exNames[optMove] || ""); }, [optMove]);
+  const saveName = () => {
+    const v = nameDraft.trim();
+    setSettings((s) => { const n = Object.assign({}, s.exNames); if (v && v !== M[optMove].name) n[optMove] = v; else delete n[optMove]; return Object.assign({}, s, { exNames: n }); });
+    notify(v ? "Renamed." : "Name reset.");
+  };
+  const setRest = (secs) => setSettings((s) => { const r = Object.assign({}, s.rest); if (secs === optSlot.rest) delete r[optSlot.id]; else r[optSlot.id] = secs; return Object.assign({}, s, { rest: r }); });
 
   return html`
     <main className="screen dayview">
       <header className="dayhead">
         <button className="back-btn" onClick=${onBack}>${Icon.back}<span>Back</span></button>
-        <h1 className="display day-title">${day.name}</h1>
+        <p className="day-focus-line">${day.focus}</p>
+        <h1 className="display day-title">${dayName(day)}</h1>
         <p className="day-intro">${day.intro}</p>
         <p className=${"day-effort" + (b.deload ? " is-deload" : "")}>${b.deload ? "Deload week: half the sets, keep it easy." : "Block " + b.block + ", week " + (b.week + 1) + ". " + effortLine(b) + "."}</p>
+        <div className="day-progress" role="progressbar" aria-valuemin="0" aria-valuemax=${planned} aria-valuenow=${doneN} aria-label="Sets done">
+          <div className="meter"><span style=${{ width: Math.min(100, planned ? (doneN / planned) * 100 : 0) + "%" }}></span></div>
+          <span className="hint">${doneN} of ${planned} sets</span>
+        </div>
       </header>
 
       ${day.slots.map((slot, i) => {
         const next = day.slots[i + 1];
-        return html`<${Exercise} key=${slot.id + moveOf(slot)} slot=${slot} move=${moveOf(slot)} today=${today} b=${b}
-          logs=${logs} setLogs=${setLogs} startTimer=${startTimer} notify=${notify}
-          nextName=${next ? M[moveOf(next)].name : null} onSwap=${() => setSwapSlot(slot)} />`;
+        return html`<${Exercise} key=${slot.id + moveOf(slot)} index=${i} slot=${slot} move=${moveOf(slot)} rest=${restOf(slot)} today=${today} b=${b}
+          logs=${logs} setLogs=${setLogs} startTimer=${startTimer} notify=${notify} onPR=${onPR} settings=${settings}
+          nextName=${next ? exName(moveOf(next)) : null} onOptions=${() => setOptSlot(slot)} onComplete=${advance} />`;
       })}
 
       <label className="cardio-row">
@@ -704,20 +897,39 @@ function DayView({ day, today, b, logs, setLogs, swaps, setSwaps, sessions, setS
       </label>
 
       <button className="primary wide finish" onClick=${finish}>${already ? "Update session" : "Finish session"}</button>
-      <p className="hint center">${already ? "Logged " + dowName + ". Your sets save as you go." : "Your sets save as you go. Finishing marks the day done."}</p>
+      <p className="hint center">Your sets save as you go. Finishing marks the day done.</p>
 
-      <${Sheet} open=${!!swapSlot} onClose=${() => setSwapSlot(null)} title="Swap exercise">
-        ${swapSlot ? html`
-          <p className="hint">Each option keeps its own history.</p>
-          <ul className="swap-list">
-            ${swapSlot.moves.map((k) => html`
-              <li key=${k}>
-                <button className=${"swap-opt" + (moveOf(swapSlot) === k ? " is-on" : "")} aria-pressed=${moveOf(swapSlot) === k}
-                  onClick=${() => { setSwaps((s) => { const n = Object.assign({}, s); if (k === swapSlot.moves[0]) delete n[swapSlot.id]; else n[swapSlot.id] = k; return n; }); setSwapSlot(null); }}>
-                  <span>${M[k].name}</span>${k === swapSlot.moves[0] ? html`<span className="hint">Programmed</span>` : null}
-                </button>
-              </li>`)}
-          </ul>` : null}
+      <${Sheet} open=${!!optSlot} onClose=${() => setOptSlot(null)} title=${optMove ? exName(optMove) : ""}>
+        ${optSlot ? html`
+          ${optSlot.moves.length > 1 ? html`
+            <h3 className="sheet-sub">Swap for</h3>
+            <ul className="swap-list">
+              ${optSlot.moves.map((k) => html`
+                <li key=${k}>
+                  <button className=${"swap-opt" + (optMove === k ? " is-on" : "")} aria-pressed=${optMove === k}
+                    onClick=${() => { setSwaps((s) => { const n = Object.assign({}, s); if (k === optSlot.moves[0]) delete n[optSlot.id]; else n[optSlot.id] = k; return n; }); }}>
+                    <span>${exName(k)}</span>${k === optSlot.moves[0] ? html`<span className="hint">Programmed</span>` : null}
+                  </button>
+                </li>`)}
+            </ul>
+            <p className="hint">Each option keeps its own history.</p>` : null}
+
+          <h3 className="sheet-sub">Rest between sets</h3>
+          <div className="chip-grid">
+            ${REST_OPTIONS.map((sec) => html`
+              <button key=${sec} className=${"chip" + (restOf(optSlot) === sec ? " is-on" : "")} aria-pressed=${restOf(optSlot) === sec} onClick=${() => setRest(sec)}>
+                ${restLabel(sec)}${sec === optSlot.rest ? html`<span className="sr"> (programmed)</span>` : null}
+              </button>`)}
+          </div>
+          <p className="hint">Programmed: ${restLabel(optSlot.rest)}.</p>
+
+          <h3 className="sheet-sub">Your name for it</h3>
+          <div className="rename-row">
+            <input className="text-input" value=${nameDraft} placeholder=${M[optMove].name} maxLength="40"
+              aria-label="Exercise name" onChange=${(e) => setNameDraft(e.target.value)} />
+            <button className="secondary" onClick=${saveName}>Save</button>
+          </div>
+          <p className="hint">Handy for your gym's machine names. History stays attached either way.</p>` : null}
       <//>
 
       <${Sheet} open=${!!summary} onClose=${() => { setSummary(null); onBack(); }} title="Session logged">
@@ -725,19 +937,45 @@ function DayView({ day, today, b, logs, setLogs, swaps, setSwaps, sessions, setS
           <div className="summary-stats">
             <div><span className="display stat-num">${summary.sets}</span><span className="stat-label">sets</span></div>
             <div><span className="display stat-num">${Math.round(summary.vol).toLocaleString("en-GB")}</span><span className="stat-label">kg lifted</span></div>
+            ${summary.mins ? html`<div><span className="display stat-num">${summary.mins}</span><span className="stat-label">minutes</span></div>` : null}
             <div><span className="display stat-num">${summary.prs.length}</span><span className="stat-label">${summary.prs.length === 1 ? "PR" : "PRs"}</span></div>
           </div>
           ${summary.prs.length ? html`
             <ul className="pr-list">
-              ${summary.prs.map((p) => html`<li key=${p.key}><span>${M[p.key].name}</span><span className="pr-val">${p.weighted ? fmtEst(p.value) + "kg est. max" : fmtNum(p.value) + " reps"}</span></li>`)}
+              ${summary.prs.map((p) => html`<li key=${p.key}><span>${exName(p.key)}</span><span className="pr-val">${p.weighted ? fmtEst(p.value) + "kg" : fmtNum(p.value) + " reps"}</span></li>`)}
             </ul>` : null}
-          <button className="primary wide" onClick=${() => { setSummary(null); onBack(); }}>Done</button>` : null}
+          <div className="btn-row">
+            <button className="primary" onClick=${() => { setSummary(null); onBack(); }}>Done</button>
+            ${summary.sets ? html`<button className="secondary" onClick=${share}>Share card</button>` : null}
+          </div>` : null}
       <//>
     </main>`;
 }
 
-function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nextName, onSwap }) {
+/* A row of plates for one side of the bar, drawn to scale-ish. */
+const PLATE_H = { 25: 40, 20: 38, 15: 34, 10: 30, 5: 22, 2.5: 18, 1.25: 14 };
+const PLATE_W = { 25: 9, 20: 8, 15: 7, 10: 6, 5: 5, 2.5: 4, 1.25: 3 };
+function PlateLine({ total, settings }) {
+  if (!total) return null;
+  const res = platesFor(total, settings.barWeight, settings.plates);
+  if (!res) return html`<p className="plates hint">Lighter than your ${fmtNum(settings.barWeight)}kg bar.</p>`;
+  if (!res.list.length) return html`<p className="plates hint">${fmtNum(total)}kg is just the bar.</p>`;
+  let x = 14;
+  const rects = res.list.map((p, i) => { const w = PLATE_W[p] || 4, h = PLATE_H[p] || 16; const r = html`<rect key=${i} x=${x} y=${22 - h / 2} width=${w} height=${h} rx="1.5"/>`; x += w + 2; return r; });
+  return html`
+    <div className="plates">
+      <svg className="plate-svg" viewBox=${"0 0 " + (x + 16) + " 44"} width=${x + 16} height="44" aria-hidden="true">
+        <rect x="0" y="20" width=${x + 16} height="4" rx="2" className="plate-sleeve"/>
+        <rect x="6" y="12" width="6" height="20" rx="1.5" className="plate-collar"/>
+        <g className="plate-stack">${rects}</g>
+      </svg>
+      <span className="plates-text">${fmtNum(total)}kg is ${res.list.map(fmtNum).join(" + ")} a side${res.left > 0 ? ". Your plates can't make the last " + fmtNum(res.left * 2) + "kg" : ""}.</span>
+    </div>`;
+}
+
+function Exercise({ index, slot, move, rest, today, b, logs, setLogs, startTimer, notify, onPR, settings, nextName, onOptions, onComplete }) {
   const mv = M[move];
+  const name = exName(move);
   const entry = (logs[move] && logs[move][today]) || { sets: [], note: "" };
   const hist = useMemo(() => historyOf(logs, move), [logs, move]);
   const before = hist.filter((s) => s.date < today);
@@ -745,9 +983,12 @@ function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nex
   const prev = before.slice().reverse().find((s) => !s.dl) || lastShown;
   const sug = suggest(slot, mv, prev, b);
   const rowsN = Math.max(sug.n, entry.sets.length);
-  const [cueOpen, setCueOpen] = useState(false);
-  const [noteOpen, setNoteOpen] = useState(!!entry.note);
   const doneN = entry.sets.filter((s) => s.done).length;
+  const complete = rowsN > 0 && doneN >= rowsN;
+  const [open, setOpen] = useState(!complete);
+  const [cueOpen, setCueOpen] = useState(false);
+  const [warmOpen, setWarmOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(!!entry.note);
   const unit = slot.uni ? " per " + slot.uni : "";
 
   const update = (fn) => setLogs((all) => {
@@ -767,6 +1008,8 @@ function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nex
     return r && r.w !== "" && r.w != null ? fmtNum(r.w) : (mv.bw ? "BW" : "");
   };
   const repsHint = (i) => { const r = sug.rows[i] || sug.rows[sug.rows.length - 1]; return r && r.r ? String(r.r) : String(slot.reps[0]) + "–" + slot.reps[1]; };
+  const weightAt = (i) => { const s = entry.sets[i]; return num(s && s.w !== "" && s.w != null ? s.w : weightHint(i)); };
+  const nextRow = (() => { for (let i = 0; i < rowsN; i++) { if (!(entry.sets[i] && entry.sets[i].done)) return i; } return rowsN - 1; })();
 
   const toggle = (i) => {
     const cur = entry.sets[i] || { w: "", r: "", done: false };
@@ -776,6 +1019,7 @@ function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nex
     const r = cur.r !== "" && cur.r != null ? cur.r : (/^\d+$/.test(rh) ? rh : "");
     if (!num(r)) { notify("Add your reps, then tick the set."); return; }
     primeAudio();
+    buzz(settings.haptics, 12);
     update((e) => { grow(e, i); e.sets[i] = { w: w === "" ? "" : String(w), r: String(r), done: true, t: Date.now() }; return e; });
     // PR check against every earlier day, and today's other sets
     const weighted = isWeighted(hist) || num(w) > 0;
@@ -783,33 +1027,52 @@ function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nex
     const prior = before.reduce((m, s) => Math.max(m, bestOf(s.sets, weighted)), 0);
     const others = bestOf(doneSets({ sets: entry.sets.filter((_, j) => j !== i) }), weighted);
     if (prior > 0 && val > prior + 0.01 && val > others + 0.01) {
-      notify(weighted ? "New PR on " + inSentence(mv.name) + ". Estimated max " + fmtEst(val) + "kg." : "New PR on " + inSentence(mv.name) + ". " + num(r) + " reps.", "pr");
+      onPR({ id: Date.now(), big: weighted ? fmtEst(val) + "kg" : num(r) + " reps", line: (weighted ? "Estimated max, " : "Best set, ") + inSentence(name) });
     }
     const last = doneN + 1 >= rowsN;
-    startTimer(slot.rest, last ? (nextName ? "Next: " + nextName : "That was the last exercise") : "Set " + (doneN + 2) + " of " + rowsN);
+    startTimer(rest, last ? (nextName ? "Next: " + nextName : "That was the last exercise") : "Set " + (doneN + 2) + " of " + rowsN);
+    if (last && settings.autoScroll) setTimeout(() => { setOpen(false); setTimeout(() => onComplete(index), 80); }, 450);
   };
 
   const addSet = () => update((e) => { grow(e, rowsN); return e; });
   const canRemove = entry.sets.length > sug.n && !entry.sets[entry.sets.length - 1].done;
   const removeSet = () => update((e) => { e.sets.pop(); return e; });
+  const warm = slot.main && settings.warmups ? warmupsFor(weightAt(0), mv, settings) : [];
+
+  if (!open) {
+    return html`
+      <section className="ex ex-collapsed" aria-label=${name}>
+        <button className="ex-fold" aria-expanded="false" onClick=${() => setOpen(true)}>
+          <span className="done-mark">${Icon.check}</span>
+          <span className="ex-fold-text"><span className="ex-fold-name">${name}</span><span className="hint">${summarise(doneSets(entry))}</span></span>
+          ${Icon.down}
+        </button>
+      </section>`;
+  }
 
   return html`
-    <section className=${"ex" + (slot.main ? " ex-main" : "") + (doneN >= rowsN ? " ex-complete" : "")} aria-label=${mv.name}>
+    <section className=${"ex" + (slot.main ? " ex-main" : "")} aria-label=${name}>
       <div className="ex-head">
         <div>
           ${slot.main ? html`<p className="ex-tag">Main lift</p>` : null}
-          <h2 className="ex-name">${mv.name}</h2>
-          <p className="ex-target">${sug.n} ${sug.n === 1 ? "set" : "sets"} of ${slot.reps[0]}–${slot.reps[1]}${unit}<span className="ex-rest">Rest ${restLabel(slot.rest)}</span></p>
+          <h2 className="ex-name">${name}</h2>
+          <p className="ex-target">${sug.n} ${sug.n === 1 ? "set" : "sets"} of ${slot.reps[0]}–${slot.reps[1]}${unit}<button className="ex-rest" onClick=${onOptions}>Rest ${restLabel(rest)}</button></p>
         </div>
-        ${slot.moves.length > 1 ? html`<button className="chip" onClick=${onSwap}>Swap</button>` : null}
+        <button className="chip" onClick=${onOptions}>Edit</button>
       </div>
 
       <p className="ex-last">${lastShown ? "Last time, " + fmtDay(lastShown.date) + ": " + summarise(lastShown.sets) : "No history yet."}</p>
       <p className="ex-sug">${sug.text}</p>
 
-      <div className="sets" role="group" aria-label=${"Sets for " + mv.name}>
+      ${warmOpen && warm.length ? html`
+        <ol className="warmups" aria-label="Warm-up sets">
+          ${warm.map((s, i) => html`<li key=${i}><span className="warm-set">${s.bar ? "Bar" : fmtNum(s.w) + "kg"} × ${s.r}</span>${mv.bar && !s.bar ? html`<span className="hint">${(platesFor(s.w, settings.barWeight, settings.plates) || { list: [] }).list.map(fmtNum).join(" + ")} a side</span>` : null}</li>`)}
+        </ol>` : null}
+
+      <div className="sets" role="group" aria-label=${"Sets for " + name}>
         ${Array.from({ length: rowsN }, (_, i) => {
           const s = entry.sets[i] || {};
+          const rh = repsHint(i);
           return html`
             <div key=${i} className=${"set" + (s.done ? " is-done" : "")}>
               <span className="set-n" aria-hidden="true">${i + 1}</span>
@@ -819,7 +1082,7 @@ function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nex
                 <span className="unit">kg</span>
               </label>
               <label className="field">
-                <input inputMode="numeric" enterKeyHint="done" className=${repsHint(i).indexOf("–") !== -1 ? "is-range" : ""} value=${s.r == null ? "" : s.r} placeholder=${repsHint(i)}
+                <input inputMode="numeric" enterKeyHint="done" className=${rh.indexOf("–") !== -1 ? "is-range" : ""} value=${s.r == null ? "" : s.r} placeholder=${rh}
                   aria-label=${"Set " + (i + 1) + " reps"} onChange=${(e) => setField(i, "r", e.target.value.replace(/[^\d]/g, ""))} />
                 <span className="unit">reps</span>
               </label>
@@ -828,11 +1091,15 @@ function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nex
         })}
       </div>
 
+      ${mv.bar ? html`<${PlateLine} total=${weightAt(nextRow)} settings=${settings} />` : null}
+
       <div className="ex-tools">
         <button className="text-btn" onClick=${addSet}>Add set</button>
         ${canRemove ? html`<button className="text-btn" onClick=${removeSet}>Remove set</button>` : null}
+        ${warm.length ? html`<button className="text-btn" aria-expanded=${warmOpen} onClick=${() => setWarmOpen(!warmOpen)}>Warm-up</button>` : null}
         <button className="text-btn" aria-expanded=${cueOpen} onClick=${() => setCueOpen(!cueOpen)}>Form cue</button>
         <button className="text-btn" aria-expanded=${noteOpen} onClick=${() => setNoteOpen(!noteOpen)}>Note</button>
+        ${complete ? html`<button className="text-btn" onClick=${() => setOpen(false)}>Fold</button>` : null}
       </div>
       ${cueOpen ? html`<p className="ex-cue">${slot.cue}</p>` : null}
       ${noteOpen ? html`
@@ -885,7 +1152,32 @@ function Chart({ points, unit, label, fmt }) {
 /* ------------------------------------------------------------------ */
 /* Progress                                                            */
 /* ------------------------------------------------------------------ */
-function Progress({ logs, openMove }) {
+const CAL_WEEKS = 12;
+function TrainingCalendar({ sessions, today }) {
+  const start = addDays(mondayOf(today), -7 * (CAL_WEEKS - 1));
+  const by = {};
+  sessions.forEach((s) => { if (s.date >= start) { by[s.date] = by[s.date] || { dl: false }; if (s.deload) by[s.date].dl = true; } });
+  const count = sessions.filter((s) => s.date >= start && s.date <= today).length;
+  const rows = ["M", "T", "W", "T", "F", "S", "S"];
+  return html`
+    <section aria-labelledby="cal-h">
+      <h2 id="cal-h" className="section-title">Last ${CAL_WEEKS} weeks</h2>
+      <div className="cal" role="img" aria-label=${count + " sessions in the last " + CAL_WEEKS + " weeks"}>
+        ${rows.map((r, di) => html`
+          <div key=${di} className="cal-row">
+            <span className="cal-dow" aria-hidden="true">${r}</span>
+            ${Array.from({ length: CAL_WEEKS }, (_, wi) => {
+              const d = addDays(start, wi * 7 + di);
+              const hit = by[d];
+              return html`<span key=${wi} className=${"cal-cell" + (hit ? (hit.dl ? " is-deload" : " is-on") : "") + (d === today ? " is-today" : "") + (d > today ? " is-future" : "")}></span>`;
+            })}
+          </div>`)}
+      </div>
+      <p className="hint">${count} ${count === 1 ? "session" : "sessions"} since ${fmtShort(start)}. Deload sessions show in green.</p>
+    </section>`;
+}
+
+function Progress({ logs, sessions, today, openMove }) {
   const prs = useMemo(() => prEvents(logs), [logs]);
   const lifts = useMemo(() => Object.keys(logs).filter((k) => M[k]).map((k) => {
     const h = historyOf(logs, k), weighted = isWeighted(h);
@@ -897,6 +1189,7 @@ function Progress({ logs, openMove }) {
   return html`
     <main className="screen progress">
       <header className="pagehead"><h1 className="display page-title">Progress</h1></header>
+      <${TrainingCalendar} sessions=${sessions} today=${today} />
       ${!lifts.length ? html`<p className="empty">Log your first session and every lift will show up here with its trend.</p>` : null}
 
       ${prs.length ? html`
@@ -906,7 +1199,7 @@ function Progress({ logs, openMove }) {
             ${prs.slice(0, 6).map((p, i) => html`
               <li key=${i}>
                 <button className="pr-row" onClick=${() => openMove(p.key)}>
-                  <span><span className="pr-name">${M[p.key].name}</span><span className="hint">${fmtDay(p.date)}</span></span>
+                  <span><span className="pr-name">${exName(p.key)}</span><span className="hint">${fmtDay(p.date)}</span></span>
                   <span className="pr-val">${p.weighted ? fmtEst(p.value) + "kg" : fmtNum(p.value) + " reps"}<span className="pr-delta">${fmtDelta(p.value - p.prev, p.weighted)}</span></span>
                 </button>
               </li>`)}
@@ -916,12 +1209,12 @@ function Progress({ logs, openMove }) {
       ${lifts.length ? html`
         <section aria-labelledby="lifts-h">
           <h2 id="lifts-h" className="section-title">Lifts</h2>
-          <p className="hint">Weighted lifts show estimated one-rep max, so a heavier set of 6 and a lighter set of 12 compare fairly.</p>
+          <p className="hint">Weighted lifts show estimated one-rep max, so a heavy set of 6 and a lighter set of 12 compare fairly.</p>
           <ul className="lift-list">
             ${lifts.map((l) => html`
               <li key=${l.key}>
                 <button className="lift-row" onClick=${() => openMove(l.key)}>
-                  <span className="lift-text"><span className="lift-name">${M[l.key].name}</span><span className="hint">${l.h.length} ${l.h.length === 1 ? "session" : "sessions"}, last ${fmtShort(l.last)}</span></span>
+                  <span className="lift-text"><span className="lift-name">${exName(l.key)}</span><span className="hint">${l.h.length} ${l.h.length === 1 ? "session" : "sessions"}, last ${fmtShort(l.last)}</span></span>
                   <${Sparkline} values=${l.series.slice(-12)} />
                   <span className="lift-best">${l.weighted ? fmtEst(l.best) : fmtNum(l.best)}<span className="lift-unit">${l.weighted ? "kg" : " reps"}</span></span>
                 </button>
@@ -932,7 +1225,6 @@ function Progress({ logs, openMove }) {
 }
 
 function MoveDetail({ logs, move, onBack }) {
-  const mv = M[move];
   const h = historyOf(logs, move);
   const weighted = isWeighted(h);
   const metrics = weighted
@@ -952,7 +1244,7 @@ function MoveDetail({ logs, move, onBack }) {
     <main className="screen detail">
       <header className="dayhead">
         <button className="back-btn" onClick=${onBack}>${Icon.back}<span>Progress</span></button>
-        <h1 className="display day-title">${mv.name}</h1>
+        <h1 className="display day-title">${exName(move)}</h1>
       </header>
       ${h.length ? html`
         <div className="stat-row">
@@ -985,6 +1277,11 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
   const set = (patch) => setSettings((s) => Object.assign({}, s, patch));
   const fileRef = useRef(null);
   const swapCount = Object.keys(swaps).length;
+  const nameCount = Object.keys(settings.exNames).length;
+  const restCount = Object.keys(settings.rest).length;
+  const dayCustom = Object.keys(settings.dayNames).length;
+  const setDayName = (id, v) => { const n = Object.assign({}, settings.dayNames); if (v.trim()) n[id] = v; else delete n[id]; set({ dayNames: n }); };
+  const togglePlate = (p) => { const has = settings.plates.indexOf(p) !== -1; set({ plates: has ? settings.plates.filter((x) => x !== p) : settings.plates.concat([p]).sort((a, c) => c - a) }); };
 
   const exportData = () => {
     const data = { app: "sculptor", version: 2, exportedAt: new Date().toISOString() };
@@ -1033,17 +1330,80 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
         </div>
       </section>
 
+      <section className="panel" aria-labelledby="look-h">
+        <h2 id="look-h" className="section-title">Accent colour</h2>
+        <div className="swatches" role="radiogroup" aria-label="Accent colour">
+          ${Object.keys(ACCENTS).map((k) => html`
+            <button key=${k} role="radio" aria-checked=${settings.accent === k} className=${"swatch" + (settings.accent === k ? " is-on" : "")} onClick=${() => set({ accent: k })}>
+              <span className="swatch-dot" style=${{ background: ACCENTS[k].hex }}></span><span>${ACCENTS[k].name}</span>
+            </button>`)}
+        </div>
+      </section>
+
+      <section className="panel" aria-labelledby="names-h">
+        <h2 id="names-h" className="section-title">Day names</h2>
+        <p className="panel-text">Call your days whatever you like. Leave one blank to use the default.</p>
+        ${DAYS.map((d) => html`
+          <label key=${d.id} className="form-field">
+            <span>${WEEKDAYS[d.dow]}, ${d.focus.toLowerCase()}</span>
+            <input value=${settings.dayNames[d.id] || ""} placeholder=${d.name} maxLength="24" onChange=${(e) => setDayName(d.id, e.target.value)} />
+          </label>`)}
+        ${dayCustom ? html`<button className="text-btn" onClick=${() => set({ dayNames: {} })}>Use the default names</button>` : null}
+      </section>
+
+      <section className="panel" aria-labelledby="sess-h">
+        <h2 id="sess-h" className="section-title">During a session</h2>
+        <${Toggle} label="Auto-advance" hint="Folds an exercise when its last set is ticked and scrolls to the next" checked=${settings.autoScroll} onChange=${(v) => set({ autoScroll: v })} />
+        <${Toggle} label="Warm-up sets for main lifts" hint="A ramp up to your first working weight" checked=${settings.warmups} onChange=${(v) => set({ warmups: v })} />
+        <${Toggle} label="Buzz when you tick a set" hint="Android only" checked=${settings.haptics} onChange=${(v) => set({ haptics: v })} />
+        <${Toggle} label="Keep screen on" hint="So the timer stays visible between sets" checked=${settings.wakeLock} onChange=${(v) => set({ wakeLock: v })} />
+      </section>
+
       <section className="panel" aria-labelledby="timer-h">
         <h2 id="timer-h" className="section-title">Rest timer</h2>
         <${Toggle} label="Sound when rest is up" checked=${settings.sound} onChange=${(v) => set({ sound: v })} />
         <${Toggle} label="Vibrate when rest is up" hint="Android only" checked=${settings.vibrate} onChange=${(v) => set({ vibrate: v })} />
-        <${Toggle} label="Keep screen on during a session" hint="So the timer stays visible between sets" checked=${settings.wakeLock} onChange=${(v) => set({ wakeLock: v })} />
+        <p className="hint">Change an exercise's rest by tapping its rest time during a session.</p>
       </section>
 
-      <section className="panel" aria-labelledby="swap-h">
-        <h2 id="swap-h" className="section-title">Exercise swaps</h2>
-        <p className="panel-text">${swapCount ? swapCount + (swapCount === 1 ? " exercise is" : " exercises are") + " swapped from the programme." : "Everything is running as programmed. Use Swap on any exercise during a session."}</p>
-        ${swapCount ? html`<button className="secondary" onClick=${() => setSwaps({})}>Reset to the programme</button>` : null}
+      <section className="panel" aria-labelledby="gym-h">
+        <h2 id="gym-h" className="section-title">Your gym</h2>
+        <p className="panel-text">Used to work out plates for barbell lifts.</p>
+        <label className="form-field">
+          <span>Barbell weight</span>
+          <select value=${settings.barWeight} onChange=${(e) => set({ barWeight: Number(e.target.value) })}>
+            ${[20, 15, 10].map((n) => html`<option key=${n} value=${n}>${n}kg</option>`)}
+          </select>
+        </label>
+        <p className="form-label">Plates available</p>
+        <div className="chip-grid">
+          ${ALL_PLATES.map((p) => html`<button key=${p} className=${"chip" + (settings.plates.indexOf(p) !== -1 ? " is-on" : "")} aria-pressed=${settings.plates.indexOf(p) !== -1} onClick=${() => togglePlate(p)}>${fmtNum(p)}kg</button>`)}
+        </div>
+      </section>
+
+      <section className="panel" aria-labelledby="ex-h">
+        <h2 id="ex-h" className="section-title">Exercise changes</h2>
+        <p className="panel-text">${swapCount || nameCount || restCount
+          ? [swapCount ? swapCount + " swapped" : "", nameCount ? nameCount + " renamed" : "", restCount ? restCount + " with custom rest" : ""].filter(Boolean).join(", ") + "."
+          : "Everything is as programmed. Tap Edit on any exercise during a session to swap it, rename it or change its rest."}</p>
+        <div className="btn-row">
+          ${swapCount ? html`<button className="secondary" onClick=${() => setSwaps({})}>Undo swaps</button>` : null}
+          ${nameCount ? html`<button className="secondary" onClick=${() => set({ exNames: {} })}>Undo renames</button>` : null}
+          ${restCount ? html`<button className="secondary" onClick=${() => set({ rest: {} })}>Undo rest changes</button>` : null}
+        </div>
+      </section>
+
+      <section className="panel" aria-labelledby="home-h">
+        <h2 id="home-h" className="section-title">Home screen</h2>
+        <${Toggle} label="Show food today" checked=${settings.showFood} onChange=${(v) => set({ showFood: v })} />
+        ${settings.showFood ? html`
+          <div className="form-grid">
+            ${FOOD_KEYS.map(([k, label, unit]) => html`
+              <label key=${k} className="form-field">
+                <span>${label} target (${unit})</span>
+                <input inputMode="numeric" value=${settings.targets[k]} onChange=${(e) => { const v = num(e.target.value); set({ targets: Object.assign({}, settings.targets, { [k]: v }) }); }} />
+              </label>`)}
+          </div>` : null}
       </section>
 
       <section className="panel" aria-labelledby="cyc-set-h">
@@ -1060,17 +1420,6 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
         ${settings.cycleStart ? html`<button className="text-btn" onClick=${() => set({ cycleStart: "" })}>Hide cycle from home</button>` : null}
       </section>
 
-      <section className="panel" aria-labelledby="food-set-h">
-        <h2 id="food-set-h" className="section-title">Food targets</h2>
-        <div className="form-grid">
-          ${FOOD_KEYS.map(([k, label, unit]) => html`
-            <label key=${k} className="form-field">
-              <span>${label} (${unit})</span>
-              <input inputMode="numeric" value=${settings.targets[k]} onChange=${(e) => { const v = num(e.target.value); set({ targets: Object.assign({}, settings.targets, { [k]: v }) }); }} />
-            </label>`)}
-        </div>
-      </section>
-
       <section className="panel" aria-labelledby="data-h">
         <h2 id="data-h" className="section-title">Your data</h2>
         <p className="panel-text">Everything is stored on this phone.${settings.migratedAt ? " Your history from the old version was brought across on " + fmtDay(settings.migratedAt) + "." : ""} Export a backup now and then.</p>
@@ -1080,7 +1429,7 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
         </div>
         <input ref=${fileRef} type="file" accept="application/json,.json" hidden onChange=${(e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ""; }} />
       </section>
-      <p className="hint center">Sculptor's Playbook, version 2</p>
+      <p className="hint center">Sculptor's Playbook, version 2.1</p>
     </main>`;
 }
 
@@ -1090,11 +1439,12 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
 function App() {
   const today = useToday();
   const [toast, setToast] = useState(null);
+  const [pr, setPr] = useState(null);
   const toastTimer = useRef(null);
-  const notify = useCallback((msg, kind) => {
-    setToast({ msg: msg, kind: kind });
+  const notify = useCallback((msg) => {
+    setToast({ msg: msg });
     clearTimeout(toastTimer.current);
-    toastTimer.current = setTimeout(() => setToast(null), kind === "pr" ? 4500 : 3000);
+    toastTimer.current = setTimeout(() => setToast(null), 3000);
   }, []);
   const saveFailed = () => notify("Couldn't save to this phone's storage. Export a backup and free up some space.");
 
@@ -1105,8 +1455,21 @@ function App() {
   const [food, setFood] = useStored("food", {}, saveFailed);
   const [cardio, setCardio] = useStored("cardio", {}, saveFailed);
   const [timer, setTimer] = useStored("timer", null);
-  const settings = useMemo(() => Object.assign(defaultSettings(), rawSettings, { targets: Object.assign({}, DEFAULT_TARGETS, rawSettings.targets || {}) }), [rawSettings]);
+  const settings = useMemo(() => {
+    const d = defaultSettings();
+    const s = Object.assign(d, rawSettings);
+    s.targets = Object.assign({}, DEFAULT_TARGETS, rawSettings.targets || {});
+    ["dayNames", "exNames", "rest"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
+    if (!Array.isArray(s.plates)) s.plates = ALL_PLATES;
+    return s;
+  }, [rawSettings]);
+  CUSTOM.ex = settings.exNames;
+  CUSTOM.day = settings.dayNames;
   const b = blockInfo(settings, today);
+
+  useEffect(() => {
+    document.documentElement.style.setProperty("--flush", (ACCENTS[settings.accent] || ACCENTS.rose).hex);
+  }, [settings.accent]);
 
   const [route, setRoute] = useState(() => (history.state && history.state.tab ? history.state : { tab: "train", day: null, move: null }));
   useEffect(() => {
@@ -1121,22 +1484,23 @@ function App() {
   const goTab = (tab) => { const r = { tab: tab, day: null, move: null }; history.replaceState(r, ""); setRoute(r); };
 
   const startTimer = useCallback((secs, label) => setTimer({ endAt: Date.now() + secs * 1000, total: secs, label: label }), []);
+  const onPR = useCallback((p) => { setPr(p); buzz(settings.haptics, [30, 50, 30, 50, 90]); }, [settings.haptics]);
 
   const day = route.day ? DAYS.find((d) => d.id === route.day) : null;
   let screen;
   if (day) {
     screen = html`<${DayView} day=${day} today=${today} b=${b} logs=${logs} setLogs=${setLogs} swaps=${swaps} setSwaps=${setSwaps}
       sessions=${sessions} setSessions=${setSessions} cardio=${cardio} setCardio=${setCardio}
-      startTimer=${startTimer} notify=${notify} settings=${settings} onBack=${back} />`;
+      startTimer=${startTimer} notify=${notify} onPR=${onPR} settings=${settings} setSettings=${setSettings} onBack=${back} />`;
   } else if (route.move && M[route.move]) {
     screen = html`<${MoveDetail} logs=${logs} move=${route.move} onBack=${back} />`;
   } else if (route.tab === "progress") {
-    screen = html`<${Progress} logs=${logs} openMove=${(k) => push({ tab: "progress", day: null, move: k })} />`;
+    screen = html`<${Progress} logs=${logs} sessions=${sessions} today=${today} openMove=${(k) => push({ tab: "progress", day: null, move: k })} />`;
   } else if (route.tab === "settings") {
     screen = html`<${Settings} settings=${settings} setSettings=${setSettings} b=${b} today=${today} swaps=${swaps} setSwaps=${setSwaps}
       notify=${notify} onImported=${() => location.reload()} />`;
   } else {
-    screen = html`<${Home} today=${today} b=${b} settings=${settings} setSettings=${setSettings} sessions=${sessions}
+    screen = html`<${Home} today=${today} b=${b} settings=${settings} setSettings=${setSettings} sessions=${sessions} logs=${logs}
       food=${food} setFood=${setFood} swaps=${swaps} openDay=${(id) => push({ tab: "train", day: id, move: null })} />`;
   }
   const showNav = !day;
@@ -1144,6 +1508,7 @@ function App() {
   return html`
     <div className=${"app" + (showNav ? " has-nav" : "") + (timer ? " has-timer" : "")}>
       <${Toast} toast=${toast} />
+      ${pr ? html`<${PrBurst} key=${pr.id} pr=${pr} onClose=${() => setPr(null)} />` : null}
       ${screen}
       <${TimerBar} timer=${timer} setTimer=${setTimer} settings=${settings} raised=${showNav} />
       ${showNav ? html`<${Nav} tab=${route.tab} go=${goTab} />` : null}
