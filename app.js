@@ -1,805 +1,1155 @@
-var useState = React.useState;
-var useEffect = React.useEffect;
+/* Sculptor's Playbook v2
+   No build step: React 18 + htm, loaded in index.html. */
+"use strict";
+(function () {
+const { useState, useEffect, useMemo, useRef, useCallback } = React;
+const html = htm.bind(React.createElement);
 
-var DAYS = [
-  { id: 1, name: "Back", emoji: "🏗️", tag: "Width + Thickness", color: "#c084fc",
-    exercises: [
-      { id: "2a", name: "Barbell Row", sets: "4 × 6-8", note: "PRIMARY. Heaviest back exercise. Underhand for more lat.", progression: "double" },
-      { id: "2b", name: "Meadows Row landmine", sets: "4 × 8-10/side", note: "Best mid-back exercise nobody does. Brace hard.", progression: "double" },
-      { id: "2c", name: "Chest-Supported DB Row", sets: "4 × 10-12", note: "Pure back, no momentum. Squeeze shoulder blades.", progression: "double" },
-      { id: "2d", name: "Lat Pulldown wide or neutral grip", sets: "4 × 8-12", note: "ADDED for width — the plan had no vertical pull at all. This is what builds the V-taper. Drive the elbows down, think lats not biceps.", progression: "double" },
-      { id: "2e", name: "Straight-Arm Cable Pulldown", sets: "3 × 15", note: "Lats only. No biceps. Focus on the squeeze.", progression: "single" },
-      { id: "2f", name: "Face Pulls", sets: "4 × 20", note: "Rear delts + posture. Always.", progression: "single" },
-      { id: "2g", name: "20 min cardio finisher", sets: "20 min", note: "Rowing pairs perfectly with back day." },
-    ],
-  },
-  { id: 2, name: "Glutes Heavy", emoji: "🍑", tag: "Hip Thrust Focus", color: "#ff6eb4",
-    exercises: [
-      { id: "1a", name: "Barbell Hip Thrust", sets: "5 × 8-10", note: "PRIMARY glute builder. Full ROM, 2-sec squeeze at top, last 1-2 reps should be a real grind. Adding weight here over the weeks is THE driver of glute growth — chase it relentlessly.", progression: "double" },
-      { id: "1b", name: "Bulgarian Split Squat", sets: "4 × 10/leg", note: "Chest forward = glute. Add a rep weekly until 12, then add weight.", progression: "double" },
-      { id: "1c", name: "Romanian Deadlift", sets: "4 × 8-10", note: "Hip hinge. Push the floor back, feel the deep stretch in the hamstrings — that stretch under load is a major glute/ham growth driver.", progression: "double" },
-      { id: "1e", name: "Cable Kickback", sets: "3 × 15-20/leg", note: "Pump finisher. Higher reps, slow squeeze.", progression: "double" },
-      { id: "1d", name: "DB Step-Up high box", sets: "4 × 10/leg", note: "Shelf + overall glute. Box at/above knee height, no push-off from the bottom leg, 3-sec controlled descent. Drive through the heel.", progression: "double" },
-      { id: "1f", name: "20 min cardio finisher", sets: "20 min", note: "Stairmaster or incline walk. Glute-biased." },
-    ],
-  },
-  { id: 3, name: "Shoulders + Abs", emoji: "💎", tag: "All 3 Heads", color: "#f472b6",
-    exercises: [
-      { id: "3a", name: "Seated DB Overhead Press", sets: "4 × 8-10", note: "PRIMARY pressing. Control the eccentric.", progression: "double" },
-      { id: "3b", name: "Cable Lateral Raise", sets: "4 × 12-15", note: "Side delts. Cable beats dumbbell — constant tension.", progression: "double" },
-      { id: "3c", name: "Rear Delt Fly pec deck or cable", sets: "4 × 15", note: "Often-neglected. This is the difference between flat and sculpted shoulders.", progression: "single" },
-      { id: "3d", name: "DB Lateral Raise", sets: "3 × 12-15", note: "Swapped in for the redundant second press — side delts are what build shoulder width. Slight forward lean, no shrug, no swing.", progression: "double" },
-      { id: "3e", name: "Cable Crunch", sets: "4 × 12-15", note: "Weighted abs. Treat as a real lift — progressive overload.", progression: "double" },
-      { id: "3f", name: "Hanging Leg Raise", sets: "3 × 10-15", note: "Lower abs. Slow controlled, no swinging.", progression: "single" },
-      { id: "3g", name: "20 min cardio finisher", sets: "20 min", note: "Steady state — incline walk." },
-    ],
-  },
-  { id: 4, name: "Glutes Hinge", emoji: "🍑", tag: "Deadlift Focus", color: "#e879f9",
-    exercises: [
-      { id: "4a", name: "Sumo Deadlift", sets: "4 × 6-8", note: "PRIMARY. Wide stance. Glutes drive the lockout.", progression: "double" },
-      { id: "4b", name: "Hyperextension on bench, plate held", sets: "4 × 10-12", note: "Round lower back slightly to bias glutes. Squeeze 1 sec at top. Don't go past parallel.", progression: "double" },
-      { id: "4c", name: "Lateral Step-Up high box", sets: "4 × 10/leg", note: "SHELF builder — stepping sideways targets the glute med (upper-side fibres). Box at/above knee height, no push-off, control the way down.", progression: "double" },
-      { id: "4d", name: "Single-Leg Hip Thrust or DB Hip Thrust", sets: "3 × 12/leg", note: "Different stimulus from Day 2's heavy thrusts.", progression: "double" },
-      { id: "4e", name: "Cable Pull Through", sets: "3 × 12-15", note: "Glute-ham tie-in. Hinge mechanics with cable resistance.", progression: "double" },
-      { id: "4f", name: "20 min cardio finisher", sets: "20 min", note: "Stairmaster — try sideways for upper glutes." },
-    ],
-  },
-  { id: 5, name: "Back + Abs", emoji: "🏗️", tag: "Volume Day", color: "#a78bfa",
-    exercises: [
-      { id: "5a", name: "Pendlay Row", sets: "4 × 6-8", note: "PRIMARY. Reset between reps. Strict form.", progression: "double" },
-      { id: "5b", name: "Seal Row or Chest-Supported", sets: "4 × 10-12", note: "No momentum allowed. Pure back work.", progression: "double" },
-      { id: "5c", name: "Neutral-Grip Lat Pulldown", sets: "4 × 10-12", note: "Second vertical pull of the week for lat width. Neutral grip is lat-biased and easy on the shoulders.", progression: "double" },
-      { id: "5d", name: "Face Pulls", sets: "4 × 20", note: "Twice a week is correct for this movement.", progression: "single" },
-      { id: "5e", name: "Ab Wheel Rollout", sets: "4 × 8-12", note: "Full body anti-extension. Brutal core work.", progression: "double" },
-      { id: "5f", name: "Pallof Press", sets: "3 × 12/side", note: "Anti-rotation. Builds the obliques and stability.", progression: "single" },
-      { id: "5g", name: "Copenhagen Plank", sets: "3 × 20-30 sec/side", note: "Hip stability + obliques.", progression: "single" },
-      { id: "5h", name: "20 min cardio finisher", sets: "20 min", note: "Rowing or cycling." },
-    ],
-  },
-  { id: 6, name: "Glutes Pump", emoji: "🍑", tag: "Glute Med + Volume", color: "#fb7185",
-    exercises: [
-      { id: "6a", name: "Machine / Smith Hip Thrust", sets: "4 × 12-15", note: "PRIMARY. Lighter + higher rep than Day 2. Constant tension, 2-sec squeeze every rep.", progression: "double" },
-      { id: "6b", name: "B-Stance Romanian Deadlift", sets: "4 × 10-12/leg", note: "Stagger stance, ~70% weight on front leg. Unilateral hinge — different stimulus from Day 4 sumo.", progression: "double" },
-      { id: "6c", name: "Standing Cable Hip Abduction", sets: "4 × 15-20/leg", note: "Glute med — builds the upper-side shelf. Ankle strap on the low pulley, lean slightly toward the stack, control the return.", progression: "double" },
-      { id: "6d", name: "Cable Kickback", sets: "3 × 15-20/leg", note: "Peak contraction. Slow squeeze, no swinging or momentum.", progression: "double" },
-      { id: "6g", name: "20 min cardio finisher", sets: "20 min", note: "Stairmaster or incline walk. Glute-biased." },
-    ],
-  },
-];
-
-// Maintenance / recomp macros — eat at TDEE, let training drive the recomp
-// TDEE ≈ 2,400 kcal (6x training/wk + high daily steps) | maintenance target = 2,400 daily, protein held high
-var MACROS_TARGET = { calories: 2400, protein: 140, carbs: 300, fat: 70 };
-
-var MACRO_KEYS = [
-  { key: "calories", label: "Cal", unit: "kcal", color: "#ff6eb4" },
-  { key: "protein", label: "Protein", unit: "g", color: "#c084fc" },
-  { key: "carbs", label: "Carbs", unit: "g", color: "#f472b6" },
-  { key: "fat", label: "Fat", unit: "g", color: "#fb7185" },
-];
-
-var CYCLE_PHASES = [
-  { name: "Menstrual", days: [1, 5], color: "#fb7185", emoji: "🌑",
-    energy: "Low", strength: "Lower",
-    tip: "Be gentle. Focus on form over weight. Different session, not a bad one.",
-    training: "Reduce load 10-15% if needed. Prioritise machines over barbells. Warmup longer.",
-    nutrition: "Iron-rich foods help. Honour cravings with protein-first meals.",
-  },
-  { name: "Follicular", days: [6, 13], color: "#c084fc", emoji: "🌒",
-    energy: "Rising", strength: "Building",
-    tip: "Estrogen is climbing. Time to chase progressive overload.",
-    training: "Push heavier on hip thrusts, RDLs, sumo deadlifts. Recovery is faster.",
-    nutrition: "Bulk targets work perfectly here. Hit your calories every day.",
-  },
-  { name: "Ovulatory", days: [14, 16], color: "#ff6eb4", emoji: "🌕",
-    energy: "Peak", strength: "Peak",
-    tip: "You are at your strongest. Window for personal records. Use it.",
-    training: "Go heavy across the board. Coordination and power peak.",
-    nutrition: "Appetite naturally lower. Don't skip meals — bulk requires consistency.",
-  },
-  { name: "Luteal", days: [17, 28], color: "#e879f9", emoji: "🌘",
-    energy: "Declining", strength: "Variable",
-    tip: "Progesterone rises and fatigue follows. Maintain, don't chase PRs.",
-    training: "Keep volume steady. Hydrate more. Sleep quality may drop.",
-    nutrition: "Cravings spike. Front-load protein. Magnesium helps with PMS.",
-  },
-];
-
-function getCyclePhase(startDate, cycleLength) {
-  if (!startDate) return null;
-  var start = new Date(startDate);
-  var today = new Date();
-  var diff = Math.floor((today - start) / 86400000);
-  var dayInCycle = (diff % cycleLength) + 1;
-  var daysLeft = cycleLength - dayInCycle;
-  var phase = CYCLE_PHASES[3];
-  for (var i = 0; i < CYCLE_PHASES.length; i++) {
-    if (dayInCycle >= CYCLE_PHASES[i].days[0] && dayInCycle <= CYCLE_PHASES[i].days[1]) {
-      phase = CYCLE_PHASES[i];
-      break;
-    }
-  }
-  return { phase: phase, dayInCycle: dayInCycle, daysLeft: daysLeft };
-}
-
-var SCHEDULE = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-
-function getWeekKey() {
-  var now = new Date();
-  var jan1 = new Date(now.getFullYear(), 0, 1);
-  var week = Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7);
-  return "week-" + now.getFullYear() + "-" + week;
-}
-
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function tryGet(key, fallback) {
-  return new Promise(function(resolve) {
-    try {
-      var raw = localStorage.getItem("sculptor_" + key);
-      resolve(raw ? JSON.parse(raw) : fallback);
-    } catch (e) {
-      resolve(fallback);
-    }
-  });
-}
-
-function trySet(key, val) {
-  return new Promise(function(resolve) {
-    try {
-      localStorage.setItem("sculptor_" + key, JSON.stringify(val));
-      resolve(true);
-    } catch (e) {
-      resolve(false);
-    }
-  });
-}
-
-function App() {
-  var s = useState("home"); var view = s[0]; var setView = s[1];
-  var s2 = useState(null); var activeDay = s2[0]; var setActiveDay = s2[1];
-  var s3 = useState({}); var checked = s3[0]; var setChecked = s3[1];
-  var s4 = useState({}); var completedDays = s4[0]; var setCompletedDays = s4[1];
-  var s5 = useState([]); var sessionLogs = s5[0]; var setSessionLogs = s5[1];
-  var s6 = useState({}); var exLogs = s6[0]; var setExLogs = s6[1];
-  var s7 = useState({}); var macroLog = s7[0]; var setMacroLog = s7[1];
-  var s9 = useState(""); var cycleStart = s9[0]; var setCycleStart = s9[1];
-  var s10 = useState(28); var cycleLength = s10[0]; var setCycleLength = s10[1];
-  var s11 = useState(true); var loading = s11[0]; var setLoading = s11[1];
-  var s12 = useState(null); var toast = s12[0]; var setToast = s12[1];
-  var s13 = useState(null); var logModal = s13[0]; var setLogModal = s13[1];
-  var s14 = useState(false); var macroModal = s14[0]; var setMacroModal = s14[1];
-  var s15 = useState(false); var cycleModal = s15[0]; var setCycleModal = s15[1];
-
-  var weekKey = getWeekKey();
-  var today = todayKey();
-  var cycleInfo = getCyclePhase(cycleStart, cycleLength);
-
-  function showToast(msg, type) {
-    setToast({ msg: msg, type: type || "success" });
-    setTimeout(function() { setToast(null); }, 3000);
-  }
-
-  useEffect(function() {
-    Promise.all([
-      tryGet("checked", {}),
-      tryGet("completedDays", {}),
-      tryGet("sessionLogs", []),
-      tryGet("exLogs", {}),
-      tryGet("macroLog", {}),
-      tryGet("cycleStart", ""),
-      tryGet("cycleLength", 28),
-    ]).then(function(results) {
-      setChecked(results[0]);
-      setCompletedDays(results[1]);
-      setSessionLogs(results[2]);
-      setExLogs(results[3]);
-      setMacroLog(results[4]);
-      setCycleStart(results[5]);
-      setCycleLength(results[6]);
-      setLoading(false);
-    });
-  }, []);
-
-  function persist(key, val, setter) {
-    setter(val);
-    trySet(key, val).then(function(ok) {
-      if (!ok) showToast("Could not save", "error");
-    });
-  }
-
-  function toggleCheck(exId) {
-    var next = Object.assign({}, checked);
-    next[exId] = !checked[exId];
-    persist("checked", next, setChecked);
-  }
-
-  function completeDay(dayId) {
-    var dateStr = new Date().toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-    var d = DAYS.filter(function(x) { return x.id === dayId; })[0];
-    var nextCd = Object.assign({}, completedDays);
-    nextCd[weekKey + "-d" + dayId] = dateStr;
-    persist("completedDays", nextCd, setCompletedDays);
-    var nextSl = [{ dayId: dayId, name: d.name, emoji: d.emoji, date: dateStr, ts: Date.now() }].concat(sessionLogs).slice(0, 60);
-    persist("sessionLogs", nextSl, setSessionLogs);
-    showToast(d.emoji + " " + d.name + " logged!");
-    setView("home");
-  }
-
-  function saveExLog(exId, entry) {
-    var next = Object.assign({}, exLogs);
-    next[exId + "-" + today] = entry;
-    trySet("exLogs", next).then(function(ok) {
-      if (ok) { setExLogs(next); showToast("Sets saved"); }
-      else showToast("Could not save", "error");
-    });
-  }
-
-  function saveMacroLog(l) {
-    var next = Object.assign({}, macroLog);
-    next[today] = l;
-    trySet("macroLog", next).then(function(ok) {
-      if (ok) { setMacroLog(next); showToast("Nutrition logged"); }
-      else showToast("Could not save", "error");
-    });
-  }
-
-  function saveCycle(start, length) {
-    setCycleStart(start);
-    setCycleLength(length);
-    trySet("cycleStart", start);
-    trySet("cycleLength", length);
-    showToast("Cycle updated");
-  }
-
-  function exportData() {
-    var data = { checked: checked, completedDays: completedDays, sessionLogs: sessionLogs, exLogs: exLogs, macroLog: macroLog, cycleStart: cycleStart, cycleLength: cycleLength, exportedAt: new Date().toISOString() };
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement("a");
-    a.href = url; a.download = "sculptor-backup-" + today + ".json"; a.click();
-    URL.revokeObjectURL(url);
-    showToast("Data exported");
-  }
-
-  function isDayDone(dayId) { return !!completedDays[weekKey + "-d" + dayId]; }
-  var weeklyCount = DAYS.filter(function(d) { return isDayDone(d.id); }).length;
-  var day = activeDay ? DAYS.filter(function(d) { return d.id === activeDay; })[0] : null;
-  var dayChecked = day ? day.exercises.filter(function(e) { return checked[e.id]; }).length : 0;
-  var dayTotal = day ? day.exercises.length : 0;
-  var todayMacros = macroLog[today] || {};
-
-  function exHistory(exId) {
-    var out = [];
-    Object.keys(exLogs).forEach(function(k) {
-      if (k.length > 11 && k.slice(0, k.length - 11) === exId) {
-        out.push({ date: k.slice(-10), entry: exLogs[k] });
-      }
-    });
-    out.sort(function(a, b) { return a.date < b.date ? 1 : (a.date > b.date ? -1 : 0); });
-    return out;
-  }
-  function lastPrior(exId) {
-    var h = exHistory(exId);
-    for (var i = 0; i < h.length; i++) { if (h[i].date !== today) return h[i]; }
-    return null;
-  }
-  function summarizeRows(rs) {
-    return (rs || []).filter(function(r) { return r.weight || r.reps; }).map(function(r) {
-      return (r.weight ? r.weight + "kg" : "BW") + (r.reps ? " × " + r.reps : "");
-    }).join(", ");
-  }
-
-  if (loading) return React.createElement("div", { style: S.loading },
-    React.createElement("div", { style: { fontSize: 28, color: "#ff6eb4" } }, "✦"),
-    React.createElement("div", { style: { fontSize: 11, color: "#ff6eb4", letterSpacing: 4, marginTop: 12 } }, "loading")
-  );
-
-  return React.createElement("div", { style: S.root },
-    React.createElement("style", null, css),
-    React.createElement("div", { style: { position: "fixed", inset: 0, pointerEvents: "none", zIndex: 0, overflow: "hidden" } },
-      [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17].map(function(i) {
-        return React.createElement("span", { key: i, className: "bg-sparkle", style: {
-          left: ((i * 37 + 11) % 100) + "%", top: ((i * 53 + 7) % 100) + "%",
-          animationDelay: ((i * 0.4) % 3) + "s", animationDuration: (2.5 + (i % 3) * 0.8) + "s",
-          fontSize: i % 3 === 0 ? 10 : i % 3 === 1 ? 7 : 13,
-          color: ["#ff6eb4","#c084fc","#f9a8d4","#e879f9","#fb7185"][i % 5],
-        }}, "✦");
-      })
-    ),
-    toast && React.createElement("div", { style: Object.assign({}, S.toast, {
-      background: toast.type === "error" ? "#2a0a0a" : "#1a0a1a",
-      borderColor: toast.type === "error" ? "#fb718566" : "#ff6eb466",
-      color: toast.type === "error" ? "#fb7185" : "#ff6eb4",
-    }) }, toast.msg),
-
-    view === "home" && React.createElement("div", { style: S.page },
-      React.createElement("div", { style: S.header },
-        React.createElement("div", { style: S.headerGlow }),
-        React.createElement("div", null,
-          React.createElement("div", { style: S.headerEyebrow }, "✦ THE SCULPTOR'S ✦"),
-          React.createElement("div", { style: S.headerTitle }, "PLAYBOOK"),
-          React.createElement("div", { style: S.headerSub }, "Recomp · 6 Days · Glutes Priority"),
-        ),
-        React.createElement("div", { style: { display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 } },
-          React.createElement("div", { style: S.weekBadge },
-            React.createElement("span", { style: S.weekNum }, weeklyCount),
-            React.createElement("span", { style: S.weekOf }, "/6 ✦"),
-          ),
-          React.createElement("button", { style: S.exportBtn, onClick: exportData }, "backup"),
-        ),
-      ),
-
-      React.createElement("div", { style: S.barWrap },
-        React.createElement("div", { style: S.bar },
-          React.createElement("div", { style: Object.assign({}, S.barFill, { width: ((weeklyCount / 6) * 100) + "%" }) }),
-          weeklyCount > 0 && React.createElement("div", { style: Object.assign({}, S.barGlow, { left: ((weeklyCount / 6) * 100) + "%" }) }),
-        ),
-      ),
-
-      React.createElement("div", { style: S.schedRow },
-        SCHEDULE.map(function(d, i) {
-          return React.createElement("div", { key: d, style: Object.assign({}, S.schedDay, isDayDone(i + 1) ? S.schedDayDone : {}) },
-            isDayDone(i + 1) && React.createElement("span", { style: S.schedSparkle }, "✦"),
-            React.createElement("span", { style: S.schedLabel }, d),
-            React.createElement("span", { style: S.schedNum }, "D" + (i + 1)),
-          );
-        })
-      ),
-
-      React.createElement("div", { style: S.cycleCard, onClick: function() { setCycleModal(true); } },
-        React.createElement("div", { style: Object.assign({}, S.cycleCardGlow, { background: cycleInfo ? cycleInfo.phase.color : "#ff6eb4" }) }),
-        cycleInfo ? React.createElement("div", null,
-          React.createElement("div", { style: S.cycleCardTop },
-            React.createElement("div", null,
-              React.createElement("div", { style: S.cycleLabel }, "✦ CYCLE AWARENESS"),
-              React.createElement("div", { style: Object.assign({}, S.cyclePhaseName, { color: cycleInfo.phase.color }) },
-                cycleInfo.phase.emoji + " " + cycleInfo.phase.name + " Phase"
-              ),
-              React.createElement("div", { style: S.cycleSub }, "Day " + cycleInfo.dayInCycle + " · " + cycleInfo.daysLeft + " days until next cycle"),
-            ),
-            React.createElement("div", { style: S.cycleStats },
-              React.createElement("div", { style: Object.assign({}, S.cycleStatBadge, { borderColor: cycleInfo.phase.color + "66", color: cycleInfo.phase.color }) }, "Energy: " + cycleInfo.phase.energy),
-              React.createElement("div", { style: Object.assign({}, S.cycleStatBadge, { borderColor: cycleInfo.phase.color + "66", color: cycleInfo.phase.color }) }, "Strength: " + cycleInfo.phase.strength),
-            ),
-          ),
-          React.createElement("div", { style: S.cycleTip }, cycleInfo.phase.tip),
-          React.createElement("div", { style: S.cycleDetailRow },
-            React.createElement("span", { style: S.cycleDetailIcon }, "🏋️"),
-            React.createElement("span", { style: S.cycleDetailText }, cycleInfo.phase.training),
-          ),
-          React.createElement("div", { style: Object.assign({}, S.cycleDetailRow, { marginTop: 8 }) },
-            React.createElement("span", { style: S.cycleDetailIcon }, "🥗"),
-            React.createElement("span", { style: S.cycleDetailText }, cycleInfo.phase.nutrition),
-          ),
-          React.createElement("div", { style: S.cycleEditHint }, "Tap to update"),
-        ) : React.createElement("div", null,
-          React.createElement("div", { style: S.cycleLabel }, "✦ CYCLE AWARENESS"),
-          React.createElement("div", { style: { fontSize: 12, color: "#6a3a6a", lineHeight: 1.7, marginTop: 8, marginBottom: 14 } }, "Log your period start date to get personalised training and nutrition adjustments for each phase of your cycle."),
-          React.createElement("div", { style: { fontSize: 12, color: "#ff6eb4", letterSpacing: 1 } }, "Set up →"),
-        ),
-      ),
-
-      // BULK NUTRITION SECTION
-      React.createElement("div", { style: { marginBottom: 32 } },
-        React.createElement("div", { style: Object.assign({}, S.secLabel, { marginBottom: 14 }) }, "✦ MAINTENANCE NUTRITION"),
-
-        React.createElement("div", { style: S.macroCard },
-          React.createElement("div", { style: S.macroCardGlow }),
-          React.createElement("div", { style: S.macroCardTop },
-            React.createElement("span", { style: Object.assign({}, S.macroCardTitle, { color: "#ff6eb4" }) }, "Daily Targets"),
-            React.createElement("button", { style: S.logBtn2, onClick: function() { setMacroModal(true); } }, "Log intake"),
-          ),
-          React.createElement("div", { style: S.macroGrid },
-            MACRO_KEYS.map(function(m) {
-              var actual = Number(todayMacros[m.key]) || 0;
-              var target = MACROS_TARGET[m.key];
-              var pct = Math.min((actual / target) * 100, 100);
-              return React.createElement("div", { key: m.key, style: S.macroItem, onClick: function() { setMacroModal(true); } },
-                React.createElement("div", { style: S.macroLabel }, m.label),
-                React.createElement("div", { style: S.macroVals },
-                  React.createElement("span", { style: Object.assign({}, S.macroActual, { color: m.color }) }, actual || "—"),
-                  React.createElement("span", { style: S.macroTarget }, "/" + target + m.unit),
-                ),
-                React.createElement("div", { style: S.pillBg },
-                  React.createElement("div", { style: Object.assign({}, S.pillFill, { width: pct + "%", background: m.color }) }),
-                ),
-              );
-            })
-          ),
-          React.createElement("div", { style: { borderTop: "1px solid #2a1a2a", paddingTop: 12, fontSize: 11, color: "#7a5a7a", lineHeight: 1.6 } },
-            "Eating at maintenance (~2,400 kcal) with protein held high. The scale stays roughly flat — judge progress by the mirror, measurements, and your lifts. If weight drifts more than ~0.25kg/week over 2-3 weeks, adjust by ~150 kcal."
-          ),
-        ),
-
-        React.createElement("div", { style: S.rulesCard },
-          React.createElement("div", { style: S.rulesTitle }, "✦ Recomp Rules"),
-          [
-            { icon: "🥩", rule: "Protein every meal", detail: "140g daily, spread across 4-5 meals. This is the lever that drives recomp at maintenance — hit it without fail." },
-            { icon: "🍚", rule: "Carbs around training", detail: "300g daily — bias most of them to pre/post workout. 50-100g before, 50-100g after." },
-            { icon: "🥑", rule: "Fat at 70g", detail: "Hormones and recovery. Avocado, olive oil, eggs, fatty fish." },
-            { icon: "⚖️", rule: "Scale stays flat, that's the point", detail: "At maintenance the number won't move much. Recomp shows up in the tape and the mirror, not the scale." },
-            { icon: "📸", rule: "Progress photos every 4 weeks", detail: "Far more useful than the scale for a recomp. Same lighting, same poses." },
-            { icon: "💧", rule: "Hydrate", detail: "3+ litres daily. Helps recovery, performance, and appetite control." },
-            { icon: "👟", rule: "Maintain 10K steps", detail: "Keeps daily expenditure up so spare calories partition toward muscle, not fat." },
-            { icon: "🛌", rule: "Sleep is muscle growth", detail: "8+ hours. You build and repair muscle while sleeping, not while lifting." },
-          ].map(function(r) {
-            return React.createElement("div", { key: r.rule, style: S.ruleItem },
-              React.createElement("span", { style: S.ruleIcon }, r.icon),
-              React.createElement("div", null,
-                React.createElement("div", { style: S.ruleName }, r.rule),
-                React.createElement("div", { style: S.ruleDetail }, r.detail),
-              ),
-            );
-          })
-        ),
-      ),
-
-      // PROGRESSION GUIDE
-      React.createElement("div", { style: S.rulesCard },
-        React.createElement("div", { style: Object.assign({}, S.rulesTitle, { color: "#c084fc" }) }, "✦ How to Progress Each Lift"),
-        React.createElement("div", { style: { fontSize: 12, color: "#a08aa0", lineHeight: 1.7, marginBottom: 14 } },
-          "Most exercises use ", React.createElement("strong", { style: { color: "#ff6eb4" } }, "double progression"), ". When you hit the top of the rep range across all sets with good form, add weight next session and drop back to the bottom of the range. Build back up over 1-3 weeks."
-        ),
-        React.createElement("div", { style: { fontSize: 11, color: "#6a3a6a", lineHeight: 1.6, padding: "10px 12px", background: "#0d040d", borderRadius: 8, borderLeft: "2px solid #ff6eb444" } },
-          "Example: Hip Thrust 5×10 @ 70kg → next week 5×8 @ 75kg → 5×9 @ 75kg → 5×10 @ 75kg → 5×8 @ 80kg..."
-        ),
-      ),
-
-      React.createElement("div", { style: { height: 32 } }),
-      React.createElement("div", { style: Object.assign({}, S.secLabel, { marginBottom: 12 }) }, "✦ THIS WEEK'S SESSIONS"),
-      React.createElement("div", { style: S.dayList },
-        DAYS.map(function(d) {
-          return React.createElement("div", { key: d.id, style: S.dayCard, className: "day-card", onClick: function() { setActiveDay(d.id); setView("day"); } },
-            React.createElement("div", { style: Object.assign({}, S.dayAccent, { background: d.color, boxShadow: "0 0 10px " + d.color + "55" }) }),
-            React.createElement("div", { style: S.dayCardL },
-              React.createElement("span", { style: S.dayEmoji }, d.emoji),
-              React.createElement("div", null,
-                React.createElement("div", { style: S.dayName }, "Day " + d.id + " — " + d.name),
-                React.createElement("div", { style: S.dayTag }, d.tag),
-              ),
-            ),
-            isDayDone(d.id)
-              ? React.createElement("span", { style: Object.assign({}, S.doneBadge, { background: d.color }) }, "Done")
-              : React.createElement("span", { style: S.arrow }, "→"),
-          );
-        })
-      ),
-
-      sessionLogs.length > 0 && React.createElement("div", null,
-        React.createElement("div", { style: Object.assign({}, S.secLabel, { marginBottom: 12 }) }, "✦ RECENT SESSIONS"),
-        React.createElement("div", { style: S.logList },
-          sessionLogs.slice(0, 4).map(function(l, i) {
-            return React.createElement("div", { key: i, style: S.logItem },
-              React.createElement("span", { style: { fontSize: 20 } }, l.emoji),
-              React.createElement("div", { style: { flex: 1 } },
-                React.createElement("div", { style: S.logName }, l.name),
-                React.createElement("div", { style: S.logDate }, l.date),
-              ),
-              React.createElement("span", { style: { fontSize: 10, color: "#ff6eb4", opacity: 0.6 } }, "✦"),
-            );
-          })
-        ),
-      ),
-
-      React.createElement("div", { style: S.tip }, "Recommended split: Mon Back / Tue Glutes Heavy / Wed Shoulders+Abs / Thu Glutes Hinge / Fri Back+Abs / Sat Glutes Pump. Sunday rest. Monday is now Back, so it no longer stacks on Sunday's glutes."),
-    ),
-
-    view === "day" && day && React.createElement("div", { style: S.page },
-      React.createElement("button", { style: S.backBtn, onClick: function() { setView("home"); } }, "← Back"),
-      React.createElement("div", { style: Object.assign({}, S.dayHeader, { borderColor: day.color + "66" }) },
-        React.createElement("span", { style: { fontSize: 36 } }, day.emoji),
-        React.createElement("div", { style: { flex: 1 } },
-          React.createElement("div", { style: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, letterSpacing: 2, lineHeight: 1, color: day.color } }, day.name),
-          React.createElement("div", { style: { fontSize: 11, color: "#6a3a6a", letterSpacing: 1, marginTop: 4 } }, day.tag),
-          cycleInfo && React.createElement("div", { style: { marginTop: 6, fontSize: 10, color: cycleInfo.phase.color, opacity: 0.8 } },
-            cycleInfo.phase.emoji + " " + cycleInfo.phase.name + " — " + cycleInfo.phase.energy + " energy"
-          ),
-        ),
-        isDayDone(day.id) && React.createElement("span", { style: Object.assign({}, S.doneBadge, { background: day.color }) }, "Done"),
-      ),
-
-      React.createElement("div", { style: S.barWrap },
-        React.createElement("div", { style: S.bar },
-          React.createElement("div", { style: Object.assign({}, S.barFill, { width: ((dayChecked / dayTotal) * 100) + "%", background: day.color }) }),
-          dayChecked > 0 && React.createElement("div", { style: Object.assign({}, S.barGlow, { left: ((dayChecked / dayTotal) * 100) + "%", background: day.color }) }),
-        ),
-      ),
-      React.createElement("div", { style: { fontSize: 11, color: "#5a2a5a", letterSpacing: 1, marginBottom: 20, textAlign: "right" } }, dayChecked + " of " + dayTotal),
-
-      React.createElement("div", { style: S.exList },
-        day.exercises.map(function(ex) {
-          var isChecked = !!checked[ex.id];
-          var logged = exLogs[ex.id + "-" + today];
-          var isPrimary = ex.note && ex.note.indexOf("PRIMARY") === 0;
-          return React.createElement("div", { key: ex.id, style: Object.assign({}, S.exCard, isChecked ? { opacity: 0.45 } : {}, isPrimary ? { borderLeft: "3px solid " + day.color } : {}) },
-            React.createElement("div", { style: Object.assign({}, S.checkbox, isChecked ? { background: day.color, borderColor: day.color, boxShadow: "0 0 12px " + day.color + "66" } : {}), onClick: function() { toggleCheck(ex.id); } },
-              isChecked && React.createElement("span", { style: { color: "#fff", fontSize: 11, fontWeight: 700 } }, "✦"),
-            ),
-            React.createElement("div", { style: { flex: 1, cursor: "pointer" }, onClick: function() { toggleCheck(ex.id); } },
-              isPrimary && React.createElement("span", { style: { fontSize: 9, fontWeight: 500, letterSpacing: 1.5, padding: "2px 8px", borderRadius: 5, display: "inline-block", marginBottom: 6, background: day.color + "33", color: day.color, border: "1px solid " + day.color + "66" } }, "PRIMARY LIFT"),
-              React.createElement("div", { style: { fontSize: 14, fontWeight: 500, color: "#f0e0f0", marginBottom: 3, lineHeight: 1.3, textDecoration: isChecked ? "line-through" : "none" } }, ex.name),
-              React.createElement("div", { style: { fontSize: 12, color: day.color, marginBottom: 4 } }, ex.sets),
-              React.createElement("div", { style: { fontSize: 11, color: "#5a3a5a", lineHeight: 1.5 } }, ex.note),
-              logged && React.createElement("div", { style: { display: "flex", flexWrap: "wrap", gap: 4, marginTop: 8 } },
-                logged.rows.slice(0, 5).map(function(r, i) {
-                  return (r.weight || r.reps) ? React.createElement("span", { key: i, style: { fontSize: 10, padding: "2px 8px", background: "#1e0e1e", borderRadius: 6, border: "1px solid " + day.color + "44", color: day.color } },
-                    (r.weight ? r.weight + "kg" : "") + (r.weight && r.reps ? " x " : "") + (r.reps || "")
-                  ) : null;
-                })
-              ),
-              (!logged && lastPrior(ex.id)) && React.createElement("div", { style: { fontSize: 10, color: "#7a5a7a", marginTop: 8, letterSpacing: 0.3 } },
-                "↩ Last " + lastPrior(ex.id).date.slice(5) + ":  " + (summarizeRows(lastPrior(ex.id).entry.rows) || "—")
-              ),
-            ),
-            React.createElement("button", { style: Object.assign({}, S.logBtnEx, { borderColor: logged ? day.color + "88" : "#2a1a2a", color: logged ? day.color : "#4a3a4a" }), onClick: function(e) { e.stopPropagation(); setLogModal({ ex: ex, color: day.color, existing: logged, previous: lastPrior(ex.id), history: exHistory(ex.id) }); } },
-              logged ? "✦" : "+"
-            ),
-          );
-        })
-      ),
-
-      !isDayDone(day.id)
-        ? React.createElement("button", { style: Object.assign({}, S.completeBtn, { background: "linear-gradient(135deg, " + day.color + ", #e879f9)", boxShadow: "0 4px 24px " + day.color + "55" }), className: "complete-btn", onClick: function() { completeDay(day.id); } }, "✦ Mark Session Complete ✦")
-        : React.createElement("div", { style: { textAlign: "center", padding: 16, fontSize: 13, color: "#c084fc", letterSpacing: 2 } }, "✦ Session logged ✦"),
-    ),
-
-    logModal && React.createElement(SetLogModal, { ex: logModal.ex, color: logModal.color, existing: logModal.existing, previous: logModal.previous, history: logModal.history, onSave: function(e) { saveExLog(logModal.ex.id, e); setLogModal(null); }, onClose: function() { setLogModal(null); } }),
-    macroModal && React.createElement(MacroLogModal, { todayLog: todayMacros, onSave: function(l) { saveMacroLog(l); setMacroModal(false); }, onClose: function() { setMacroModal(false); } }),
-    cycleModal && React.createElement(CycleModal, { currentStart: cycleStart, currentLength: cycleLength, onSave: function(s, l) { saveCycle(s, l); setCycleModal(false); }, onClose: function() { setCycleModal(false); } }),
-  );
-}
-
-function SetLogModal(props) {
-  var ex = props.ex; var color = props.color; var existing = props.existing;
-  var previous = props.previous; var history = props.history || [];
-
-  function seedRows() {
-    if (existing && existing.rows) return existing.rows;
-    if (previous && previous.entry && previous.entry.rows) {
-      // Carry last session's weights forward; leave reps blank so you log fresh.
-      return previous.entry.rows.map(function(r) { return { weight: r.weight || "", reps: "" }; });
-    }
-    return [{ weight: "", reps: "" }, { weight: "", reps: "" }, { weight: "", reps: "" }];
-  }
-  var s1 = useState(seedRows());
-  var rows = s1[0]; var setRows = s1[1];
-  var s2 = useState(existing && existing.notes ? existing.notes : "");
-  var notes = s2[0]; var setNotes = s2[1];
-  var s3 = useState(false); var showHist = s3[0]; var setShowHist = s3[1];
-
-  function updateRow(i, field, val) {
-    var next = rows.map(function(r, j) {
-      if (j === i) { var newR = Object.assign({}, r); newR[field] = val; return newR; }
-      return r;
-    });
-    setRows(next);
-  }
-  function summary(rs) {
-    return (rs || []).filter(function(r) { return r.weight || r.reps; }).map(function(r) {
-      return (r.weight ? r.weight + "kg" : "BW") + (r.reps ? "×" + r.reps : "");
-    }).join("   ");
-  }
-  var range = ex.sets.replace(/^\s*[0-9]+\s*×\s*/, "");
-  var progHint = ex.progression === "double"
-    ? "Double progression — hit " + range + " across all sets, then add weight next time and drop back to the bottom of the range."
-    : "Keep the load, chase clean reps and the squeeze. Add weight only when it feels easy.";
-
-  return React.createElement("div", { style: S.overlay, onClick: props.onClose },
-    React.createElement("div", { style: S.modal, onClick: function(e) { e.stopPropagation(); } },
-      React.createElement("div", { style: Object.assign({}, S.modalBar, { background: "linear-gradient(90deg, " + color + ", #e879f9)" }) }),
-      React.createElement("div", { style: S.modalHead },
-        React.createElement("div", null,
-          React.createElement("div", { style: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 2, color: color } }, ex.name),
-          React.createElement("div", { style: { fontSize: 11, color: "#6a3a6a", marginTop: 2 } }, ex.sets),
-        ),
-        React.createElement("button", { style: S.closeBtn, onClick: props.onClose }, "X"),
-      ),
-
-      previous ? React.createElement("div", { style: { background: "#1e0e1e", border: "1px solid " + color + "33", borderRadius: 10, padding: "10px 12px", marginBottom: 14 } },
-        React.createElement("div", { style: { fontSize: 9, letterSpacing: 1.5, color: "#6a3a6a", textTransform: "uppercase", marginBottom: 5 } }, "Last session · " + previous.date.slice(5) + "  —  beat this"),
-        React.createElement("div", { style: { fontSize: 14, color: color, fontWeight: 500 } }, summary(previous.entry.rows) || "—"),
-        previous.entry.notes ? React.createElement("div", { style: { fontSize: 11, color: "#8a6a8a", marginTop: 4, fontStyle: "italic" } }, "\u201C" + previous.entry.notes + "\u201D") : null,
-        history.length > 1 && React.createElement("button", { style: { background: "none", border: "none", color: "#7a5a7a", fontSize: 10, cursor: "pointer", padding: 0, marginTop: 8, letterSpacing: 0.5 }, onClick: function() { setShowHist(!showHist); } }, showHist ? "hide history" : "show full history →"),
-        showHist && React.createElement("div", { style: { marginTop: 8, borderTop: "1px solid #2a1a2a", paddingTop: 8, display: "flex", flexDirection: "column", gap: 5 } },
-          history.slice(0, 8).map(function(h, i) {
-            return React.createElement("div", { key: i, style: { fontSize: 11, color: "#8a6a8a", display: "flex", justifyContent: "space-between", gap: 12 } },
-              React.createElement("span", { style: { flexShrink: 0 } }, h.date.slice(5)),
-              React.createElement("span", { style: { color: "#a884a8", textAlign: "right" } }, summary(h.entry.rows) || "—"),
-            );
-          })
-        ),
-      ) : React.createElement("div", { style: { fontSize: 11, color: "#6a4a6a", marginBottom: 14, lineHeight: 1.5, borderLeft: "2px solid " + color + "44", paddingLeft: 10 } }, "First time logging this one — set your baseline and we build from here."),
-
-      React.createElement("div", { style: { display: "flex", gap: 8, marginBottom: 8 } },
-        React.createElement("span", { style: { width: 24 } }),
-        React.createElement("span", { style: { flex: 1, fontSize: 9, color: "#5a2a5a", letterSpacing: 1, textAlign: "center" } }, "WEIGHT"),
-        React.createElement("span", { style: { flex: 1, fontSize: 9, color: "#5a2a5a", letterSpacing: 1, textAlign: "center" } }, "REPS"),
-        React.createElement("span", { style: { width: 28 } }),
-      ),
-      rows.map(function(row, i) {
-        var prevRow = previous && previous.entry.rows ? previous.entry.rows[i] : null;
-        return React.createElement("div", { key: i, style: { display: "flex", gap: 8, marginBottom: 8, alignItems: "center" } },
-          React.createElement("span", { style: { width: 24, fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, textAlign: "center", color: color } }, i + 1),
-          React.createElement("input", { style: Object.assign({}, S.setInput, { borderColor: color + "44" }), placeholder: prevRow && prevRow.weight ? String(prevRow.weight) : "kg", value: row.weight, onChange: function(e) { updateRow(i, "weight", e.target.value); }, type: "number", inputMode: "decimal" }),
-          React.createElement("input", { style: Object.assign({}, S.setInput, { borderColor: color + "44" }), placeholder: prevRow && prevRow.reps ? String(prevRow.reps) : "reps", value: row.reps, onChange: function(e) { updateRow(i, "reps", e.target.value); }, type: "number", inputMode: "numeric" }),
-          React.createElement("button", { style: { width: 28, height: 28, background: "none", border: "none", color: "#3a1a3a", fontSize: 11, cursor: "pointer" }, onClick: function() { setRows(rows.filter(function(_, j) { return j !== i; })); } }, "X"),
-        );
-      }),
-      React.createElement("button", { style: S.addSetBtn, onClick: function() { setRows(rows.concat([{ weight: "", reps: "" }])); } }, "+ Add set"),
-      React.createElement("div", { style: { fontSize: 10, color: "#7a5a7a", lineHeight: 1.6, marginBottom: 14, padding: "9px 11px", background: "#0d040d", borderRadius: 8, borderLeft: "2px solid " + color + "44" } }, "🎯 " + progHint),
-      React.createElement("textarea", { style: S.notesInput, placeholder: "Notes — RPE, how it felt, form cues...", value: notes, onChange: function(e) { setNotes(e.target.value); } }),
-      React.createElement("button", { style: Object.assign({}, S.saveBtn, { background: "linear-gradient(135deg, " + color + ", #e879f9)" }), onClick: function() { props.onSave({ rows: rows, notes: notes }); } }, "✦ Save"),
-    ),
-  );
-}
-
-function MacroLogModal(props) {
-  var todayLog = props.todayLog;
-  var init = { calories: "", protein: "", carbs: "", fat: "" };
-  Object.keys(todayLog).forEach(function(k) { init[k] = todayLog[k]; });
-  var s1 = useState(init); var l = s1[0]; var setL = s1[1];
-
-  return React.createElement("div", { style: S.overlay, onClick: props.onClose },
-    React.createElement("div", { style: S.modal, onClick: function(e) { e.stopPropagation(); } },
-      React.createElement("div", { style: Object.assign({}, S.modalBar, { background: "linear-gradient(90deg, #ff6eb4, #e879f9)" }) }),
-      React.createElement("div", { style: S.modalHead },
-        React.createElement("div", null,
-          React.createElement("div", { style: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 2, color: "#ff6eb4" } }, "Log Intake ✦"),
-          React.createElement("div", { style: { fontSize: 11, color: "#6a3a6a", marginTop: 2 } }, "Lean bulk · " + MACROS_TARGET.calories + " kcal target"),
-        ),
-        React.createElement("button", { style: S.closeBtn, onClick: props.onClose }, "X"),
-      ),
-      React.createElement("div", { style: { fontSize: 12, color: "#6a3a6a", lineHeight: 1.7, marginBottom: 20, borderLeft: "2px solid #ff6eb433", paddingLeft: 12 } }, "Hit protein and calories every day. The rest is flexibility."),
-      MACRO_KEYS.map(function(m) {
-        var actual = Number(l[m.key]) || 0;
-        var target = MACROS_TARGET[m.key];
-        var pct = Math.min((actual / target) * 100, 100);
-        var over = actual > target * 1.1;
-        return React.createElement("div", { key: m.key, style: { marginBottom: 18 } },
-          React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 10 } },
-            React.createElement("div", { style: { width: 8, height: 8, borderRadius: "50%", background: m.color, flexShrink: 0 } }),
-            React.createElement("label", { style: { flex: 1, fontSize: 13, color: "#e0c0e0" } }, m.label),
-            React.createElement("span", { style: { fontSize: 10, color: over ? "#fb7185" : m.color, letterSpacing: 0.3 } }, actual + " / " + target + m.unit),
-            React.createElement("input", { style: Object.assign({}, S.setInput, { width: 80, borderColor: m.color + "55" }), type: "number", value: l[m.key] || "", onChange: function(e) { var next = Object.assign({}, l); next[m.key] = e.target.value; setL(next); }, placeholder: "0" }),
-          ),
-          React.createElement("div", { style: { height: 3, background: "#2a0a2a", borderRadius: 2, overflow: "hidden", marginTop: 8, marginLeft: 18 } },
-            React.createElement("div", { style: { height: "100%", width: pct + "%", background: over ? "#fb7185" : m.color, borderRadius: 2, transition: "width 0.2s ease" } }),
-          ),
-        );
-      }),
-      React.createElement("button", { style: Object.assign({}, S.saveBtn, { background: "linear-gradient(135deg, #ff6eb4, #e879f9)", marginTop: 8 }), onClick: function() { props.onSave(l); } }, "✦ Save Today's Log"),
-    ),
-  );
-}
-
-function CycleModal(props) {
-  var s1 = useState(props.currentStart || ""); var start = s1[0]; var setStart = s1[1];
-  var s2 = useState(props.currentLength || 28); var length = s2[0]; var setLength = s2[1];
-  var preview = getCyclePhase(start, length);
-
-  return React.createElement("div", { style: S.overlay, onClick: props.onClose },
-    React.createElement("div", { style: S.modal, onClick: function(e) { e.stopPropagation(); } },
-      React.createElement("div", { style: Object.assign({}, S.modalBar, { background: "linear-gradient(90deg, #f472b6, #e879f9)" }) }),
-      React.createElement("div", { style: S.modalHead },
-        React.createElement("div", null,
-          React.createElement("div", { style: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 22, letterSpacing: 2, color: "#f472b6" } }, "Cycle Tracker ✦"),
-          React.createElement("div", { style: { fontSize: 11, color: "#6a3a6a", marginTop: 2 } }, "Training adapts to your cycle"),
-        ),
-        React.createElement("button", { style: S.closeBtn, onClick: props.onClose }, "X"),
-      ),
-      React.createElement("div", { style: { marginBottom: 16 } },
-        React.createElement("label", { style: { fontSize: 11, color: "#7a3a7a", letterSpacing: 1, display: "block", marginBottom: 8 } }, "FIRST DAY OF LAST PERIOD"),
-        React.createElement("input", { type: "date", value: start, onChange: function(e) { setStart(e.target.value); }, style: Object.assign({}, S.setInput, { width: "100%", textAlign: "left", padding: "12px 14px", fontSize: 14, colorScheme: "dark" }) }),
-      ),
-      React.createElement("div", { style: { marginBottom: 20 } },
-        React.createElement("label", { style: { fontSize: 11, color: "#7a3a7a", letterSpacing: 1, display: "block", marginBottom: 8 } }, "AVERAGE CYCLE LENGTH (DAYS)"),
-        React.createElement("div", { style: { display: "flex", gap: 8 } },
-          [24, 26, 28, 30, 32].map(function(n) {
-            return React.createElement("button", { key: n, onClick: function() { setLength(n); }, style: { flex: 1, padding: "10px 0", borderRadius: 8, border: "1px solid " + (length === n ? "#f472b666" : "#2a1a2a"), background: length === n ? "#f472b622" : "#1a0a1a", color: length === n ? "#f472b6" : "#5a3a5a", fontSize: 13, cursor: "pointer" } }, n);
-          })
-        ),
-      ),
-      preview && React.createElement("div", { style: { padding: 14, background: preview.phase.color + "11", borderRadius: 12, border: "1px solid " + preview.phase.color + "33", marginBottom: 20 } },
-        React.createElement("div", { style: { fontSize: 11, color: preview.phase.color, letterSpacing: 1, marginBottom: 6 } }, "CURRENT PHASE"),
-        React.createElement("div", { style: { fontSize: 16, color: preview.phase.color, fontFamily: "'Bebas Neue', sans-serif", letterSpacing: 2 } }, preview.phase.emoji + " " + preview.phase.name + " — Day " + preview.dayInCycle),
-      ),
-      React.createElement("button", { style: Object.assign({}, S.saveBtn, { background: "linear-gradient(135deg, #f472b6, #e879f9)" }), onClick: function() { props.onSave(start, length); } }, "✦ Save"),
-    ),
-  );
-}
-
-var css = "\n  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap');\n  * { box-sizing: border-box; margin: 0; padding: 0; }\n  input, textarea, button { font-family: 'DM Sans', sans-serif; }\n  ::-webkit-scrollbar { width: 4px; }\n  ::-webkit-scrollbar-thumb { background: #3a1a3a; border-radius: 2px; }\n  .day-card { cursor: pointer; transition: transform 0.2s ease; }\n  .day-card:hover { transform: translateX(5px); }\n  .complete-btn:hover { filter: brightness(1.15); }\n  .bg-sparkle { position: fixed; pointer-events: none; animation: floatSparkle ease-in-out infinite; opacity: 0; }\n  @keyframes floatSparkle { 0%{opacity:0;transform:translateY(0) rotate(0deg)} 30%{opacity:0.5} 70%{opacity:0.3} 100%{opacity:0;transform:translateY(-40px) rotate(180deg)} }\n  @keyframes slideUp { from{transform:translateY(50px);opacity:0} to{transform:translateY(0);opacity:1} }\n  @keyframes slideDown { from{transform:translateY(-20px);opacity:0} to{transform:translateY(0);opacity:1} }\n  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }\n  input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.5) sepia(1) saturate(5) hue-rotate(280deg); }\n";
-
-var S = {
-  root: { background: "linear-gradient(160deg, #0d0010 0%, #120018 40%, #0a000f 100%)", minHeight: "100vh", color: "#f0e0f0", fontFamily: "'DM Sans', sans-serif", position: "relative", overflow: "hidden" },
-  loading: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100vh", background: "#0d0010", gap: 12 },
-  page: { maxWidth: 480, margin: "0 auto", padding: "32px 20px 80px", position: "relative", zIndex: 1 },
-  toast: { position: "fixed", top: 20, left: "50%", transform: "translateX(-50%)", padding: "10px 20px", borderRadius: 20, border: "1px solid", fontSize: 12, letterSpacing: 0.5, zIndex: 200, animation: "slideDown 0.2s ease", whiteSpace: "nowrap" },
-  header: { marginBottom: 24, position: "relative", display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
-  headerGlow: { position: "absolute", top: -20, left: -40, width: 200, height: 120, background: "radial-gradient(ellipse, #ff6eb433 0%, transparent 70%)", pointerEvents: "none" },
-  headerEyebrow: { fontSize: 10, letterSpacing: 4, color: "#ff6eb4", marginBottom: 2, opacity: 0.8 },
-  headerTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 52, letterSpacing: 4, lineHeight: 1, background: "linear-gradient(135deg, #ff6eb4, #f0abfc, #fb7185)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" },
-  headerSub: { fontSize: 11, color: "#c084fc", letterSpacing: 2, marginTop: 4, opacity: 0.8 },
-  weekBadge: { display: "flex", flexDirection: "column", alignItems: "flex-end" },
-  weekNum: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 54, lineHeight: 1, background: "linear-gradient(135deg, #ff6eb4, #e879f9)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" },
-  weekOf: { fontSize: 10, color: "#c084fc", letterSpacing: 1 },
-  exportBtn: { background: "none", border: "1px solid #2a1a2a", borderRadius: 8, padding: "4px 10px", color: "#5a2a5a", fontSize: 10, cursor: "pointer", letterSpacing: 0.5 },
-  barWrap: { marginBottom: 20 },
-  bar: { height: 3, background: "#1a0a1a", borderRadius: 2, overflow: "visible", position: "relative" },
-  barFill: { height: "100%", background: "linear-gradient(90deg, #ff6eb4, #e879f9)", borderRadius: 2, transition: "width 0.5s ease", boxShadow: "0 0 10px #ff6eb477" },
-  barGlow: { position: "absolute", top: "50%", transform: "translate(-50%, -50%)", width: 8, height: 8, borderRadius: "50%", boxShadow: "0 0 10px 4px #ff6eb4aa" },
-  schedRow: { display: "flex", gap: 6, marginBottom: 28 },
-  schedDay: { flex: 1, background: "#1a0a1a", borderRadius: 10, padding: "10px 0", display: "flex", flexDirection: "column", alignItems: "center", gap: 3, border: "1px solid #2a0a2a", position: "relative", overflow: "hidden" },
-  schedDayDone: { background: "linear-gradient(160deg, #2a0a2a, #1a0a1a)", border: "1px solid #ff6eb466", boxShadow: "0 0 12px #ff6eb422" },
-  schedSparkle: { position: "absolute", top: 4, right: 5, fontSize: 8, color: "#ff6eb4" },
-  schedLabel: { fontSize: 9, color: "#5a3a5a", letterSpacing: 1 },
-  schedNum: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, color: "#f0e0f0", letterSpacing: 1 },
-  secLabel: { fontSize: 9, letterSpacing: 3, color: "#5a2a5a", textTransform: "uppercase" },
-  cycleCard: { background: "linear-gradient(135deg, #1a0a1a, #150515)", borderRadius: 16, padding: 16, marginBottom: 28, border: "1px solid #3a1a3a", cursor: "pointer", position: "relative", overflow: "hidden" },
-  cycleCardGlow: { position: "absolute", top: -40, right: -40, width: 150, height: 150, borderRadius: "50%", opacity: 0.08, filter: "blur(30px)", pointerEvents: "none" },
-  cycleCardTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 10 },
-  cycleLabel: { fontSize: 9, color: "#5a2a5a", letterSpacing: 3, textTransform: "uppercase", marginBottom: 6 },
-  cyclePhaseName: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 24, letterSpacing: 2, lineHeight: 1 },
-  cycleSub: { fontSize: 10, color: "#6a3a6a", marginTop: 4 },
-  cycleStats: { display: "flex", flexDirection: "column", gap: 6, alignItems: "flex-end" },
-  cycleStatBadge: { fontSize: 10, padding: "3px 8px", borderRadius: 10, border: "1px solid", letterSpacing: 0.5 },
-  cycleTip: { fontSize: 12, color: "#c0a0c0", lineHeight: 1.6, marginBottom: 12, fontStyle: "italic" },
-  cycleDetailRow: { display: "flex", gap: 8, alignItems: "flex-start" },
-  cycleDetailIcon: { fontSize: 14, flexShrink: 0, marginTop: 1 },
-  cycleDetailText: { fontSize: 11, color: "#6a3a6a", lineHeight: 1.6 },
-  cycleEditHint: { fontSize: 9, color: "#4a2a4a", letterSpacing: 2, textAlign: "right", marginTop: 12 },
-  macroCard: { background: "linear-gradient(135deg, #1a0a1a, #150515)", borderRadius: 16, padding: 16, marginBottom: 14, border: "1px solid #3a1a3a", position: "relative", overflow: "hidden" },
-  macroCardGlow: { position: "absolute", top: -30, right: -30, width: 120, height: 120, background: "radial-gradient(ellipse, #ff6eb422 0%, transparent 70%)", pointerEvents: "none" },
-  macroCardTop: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
-  macroCardTitle: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: 2 },
-  logBtn2: { background: "none", border: "1px solid #3a1a3a", borderRadius: 8, padding: "5px 10px", color: "#6a3a6a", fontSize: 11, cursor: "pointer", letterSpacing: 0.5 },
-  macroGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 16 },
-  macroItem: { cursor: "pointer" },
-  macroLabel: { fontSize: 9, color: "#6a3a6a", letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 },
-  macroVals: { display: "flex", alignItems: "baseline", gap: 4, marginBottom: 6 },
-  macroActual: { fontFamily: "'Bebas Neue', sans-serif", fontSize: 28, lineHeight: 1 },
-  macroTarget: { fontSize: 10, color: "#4a2a4a" },
-  pillBg: { height: 3, background: "#2a0a2a", borderRadius: 2, overflow: "hidden" },
-  pillFill: { height: "100%", borderRadius: 2, transition: "width 0.4s ease" },
-  rulesCard: { background: "linear-gradient(135deg, #150a15, #110811)", borderRadius: 14, padding: 16, border: "1px solid #2a1a2a", marginBottom: 16 },
-  rulesTitle: { fontSize: 10, color: "#ff6eb4", letterSpacing: 3, textTransform: "uppercase", marginBottom: 16, opacity: 0.8 },
-  ruleItem: { display: "flex", gap: 12, marginBottom: 16, alignItems: "flex-start" },
-  ruleIcon: { fontSize: 20, flexShrink: 0, marginTop: 1 },
-  ruleName: { fontSize: 13, fontWeight: 500, color: "#e0c0e0", marginBottom: 3 },
-  ruleDetail: { fontSize: 11, color: "#6a3a6a", lineHeight: 1.6 },
-  dayList: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 32 },
-  dayCard: { background: "linear-gradient(135deg, #160a16, #120812)", borderRadius: 14, padding: "14px 16px 14px 0", display: "flex", alignItems: "center", border: "1px solid #2a1a2a", overflow: "hidden" },
-  dayAccent: { width: 4, alignSelf: "stretch", borderRadius: "0 2px 2px 0", marginRight: 14, flexShrink: 0 },
-  dayCardL: { display: "flex", alignItems: "center", gap: 12, flex: 1 },
-  dayEmoji: { fontSize: 24 },
-  dayName: { fontSize: 14, fontWeight: 500, color: "#f0e0f0" },
-  dayTag: { fontSize: 11, color: "#6a3a6a", marginTop: 2 },
-  doneBadge: { fontSize: 10, fontWeight: 500, letterSpacing: 1, padding: "4px 12px", borderRadius: 20, color: "#fff", flexShrink: 0 },
-  arrow: { fontSize: 16, color: "#3a1a3a", marginLeft: "auto" },
-  logList: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 24 },
-  logItem: { display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#120812", borderRadius: 10, border: "1px solid #2a1a2a" },
-  logName: { fontSize: 13, color: "#e0c0e0", fontWeight: 500 },
-  logDate: { fontSize: 11, color: "#4a2a4a", marginTop: 2 },
-  tip: { fontSize: 12, color: "#5a2a5a", lineHeight: 1.7, padding: "14px 16px", background: "#110811", borderRadius: 10, borderLeft: "2px solid #ff6eb433" },
-  backBtn: { background: "none", border: "none", color: "#6a3a6a", fontSize: 13, cursor: "pointer", letterSpacing: 0.5, marginBottom: 24, padding: 0 },
-  dayHeader: { display: "flex", alignItems: "flex-start", gap: 14, marginBottom: 20, paddingBottom: 20, borderBottom: "1px solid", position: "relative" },
-  exList: { display: "flex", flexDirection: "column", gap: 10, marginBottom: 28 },
-  exCard: { display: "flex", gap: 12, background: "linear-gradient(135deg, #160a16, #120812)", borderRadius: 14, padding: 14, border: "1px solid #2a1a2a", alignItems: "flex-start" },
-  checkbox: { width: 22, height: 22, borderRadius: 6, border: "1.5px solid #3a1a3a", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", marginTop: 2, cursor: "pointer" },
-  logBtnEx: { width: 28, height: 28, borderRadius: 8, border: "1px solid", background: "none", fontSize: 13, cursor: "pointer", flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" },
-  completeBtn: { width: "100%", padding: 16, borderRadius: 14, border: "none", color: "#fff", fontFamily: "'Bebas Neue', sans-serif", fontSize: 18, letterSpacing: 3, cursor: "pointer" },
-  overlay: { position: "fixed", inset: 0, background: "rgba(5,0,10,0.92)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 100 },
-  modal: { background: "linear-gradient(160deg, #1a0a1a, #130813)", borderRadius: "22px 22px 0 0", padding: "0 20px 44px", width: "100%", maxWidth: 480, maxHeight: "88vh", overflowY: "auto", animation: "slideUp 0.25s ease", border: "1px solid #3a1a3a", borderBottom: "none" },
-  modalBar: { height: 4, borderRadius: "22px 22px 0 0", marginBottom: 20 },
-  modalHead: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
-  closeBtn: { background: "none", border: "none", color: "#4a2a4a", fontSize: 16, cursor: "pointer" },
-  addSetBtn: { width: "100%", background: "none", border: "1px dashed #2a1a2a", borderRadius: 8, padding: 10, color: "#5a2a5a", fontSize: 12, cursor: "pointer", marginTop: 4, marginBottom: 14 },
-  notesInput: { width: "100%", background: "#1a0a1a", border: "1px solid #2a1a2a", borderRadius: 10, padding: 12, color: "#f0e0f0", fontSize: 12, outline: "none", resize: "none", height: 70, marginBottom: 16, lineHeight: 1.6 },
-  setInput: { flex: 1, background: "#1e0e1e", border: "1px solid", borderRadius: 8, padding: "10px 8px", color: "#f0e0f0", fontSize: 15, textAlign: "center", outline: "none" },
-  saveBtn: { width: "100%", padding: 14, borderRadius: 12, border: "none", color: "#fff", fontFamily: "'Bebas Neue', sans-serif", fontSize: 16, letterSpacing: 2, cursor: "pointer" },
+/* ------------------------------------------------------------------ */
+/* Movement library. History and PRs are stored per movement, so a    */
+/* lift keeps its history wherever it appears in the week.             */
+/* inc = the weight jump suggested once you top the rep range.         */
+/* ------------------------------------------------------------------ */
+const M = {
+  // Glutes and legs
+  "hip-thrust":         { name: "Barbell hip thrust", inc: 2.5 },
+  "smith-hip-thrust":   { name: "Smith machine hip thrust", inc: 2.5 },
+  "machine-hip-thrust": { name: "Hip thrust machine", inc: 5 },
+  "sl-hip-thrust":      { name: "Single-leg hip thrust", inc: 2.5 },
+  "bss":                { name: "Bulgarian split squat", inc: 2 },
+  "reverse-lunge":      { name: "Deficit reverse lunge", inc: 2 },
+  "walking-lunge":      { name: "Walking lunge", inc: 2 },
+  "leg-press":          { name: "Leg press, feet high and wide", inc: 5 },
+  "hack-squat":         { name: "Hack squat", inc: 5 },
+  "smith-squat":        { name: "Smith squat, feet forward", inc: 2.5 },
+  "rdl":                { name: "Romanian deadlift", inc: 2.5 },
+  "db-rdl":             { name: "Dumbbell Romanian deadlift", inc: 2 },
+  "sumo":               { name: "Sumo deadlift", inc: 2.5 },
+  "b-stance-rdl":       { name: "B-stance RDL", inc: 2 },
+  "hyperext":           { name: "45° hyperextension", inc: 2.5, bwOk: true },
+  "pull-through":       { name: "Cable pull-through", inc: 2.5 },
+  "seated-curl":        { name: "Seated leg curl", inc: 5 },
+  "lying-curl":         { name: "Lying leg curl", inc: 5 },
+  "lateral-step-up":    { name: "Lateral step-up", inc: 2 },
+  "step-up":            { name: "High step-up", inc: 2 },
+  "machine-abduction":  { name: "Hip abduction machine", inc: 5 },
+  "cable-abduction":    { name: "Standing cable abduction", inc: 1.25 },
+  "kickback":           { name: "Cable kickback", inc: 1.25 },
+  // Back and rear delts
+  "lat-pulldown":       { name: "Lat pulldown", inc: 2.5 },
+  "neutral-pulldown":   { name: "Neutral-grip pulldown", inc: 2.5 },
+  "pull-up":            { name: "Pull-up", inc: 2.5, bwOk: true },
+  "sa-pulldown":        { name: "Single-arm cable pulldown", inc: 1.25 },
+  "sa-db-row":          { name: "Single-arm dumbbell row", inc: 2 },
+  "sa-cable-row":       { name: "Single-arm cable row", inc: 2.5 },
+  "meadows":            { name: "Meadows row", inc: 2.5 },
+  "cs-db-row":          { name: "Chest-supported dumbbell row", inc: 2 },
+  "cs-row":             { name: "Chest-supported T-bar row", inc: 2.5 },
+  "seal-row":           { name: "Seal row", inc: 2.5 },
+  "machine-row":        { name: "Machine row", inc: 5 },
+  "cable-row":          { name: "Seated cable row", inc: 2.5 },
+  "barbell-row":        { name: "Barbell row", inc: 2.5 },
+  "pendlay":            { name: "Pendlay row", inc: 2.5 },
+  "straight-arm":       { name: "Straight-arm pulldown", inc: 1.25 },
+  "face-pull":          { name: "Face pull", inc: 1.25 },
+  "rear-delt-fly":      { name: "Reverse pec deck", inc: 2.5 },
+  "cable-rear-delt":    { name: "Cable rear-delt fly", inc: 1.25 },
+  // Shoulders
+  "ohp":                { name: "Seated dumbbell shoulder press", inc: 2 },
+  "machine-press":      { name: "Machine shoulder press", inc: 2.5 },
+  "cable-lateral":      { name: "Cable lateral raise", inc: 1.25 },
+  "db-lateral":         { name: "Dumbbell lateral raise", inc: 1 },
+  "machine-lateral":    { name: "Machine lateral raise", inc: 2.5 },
+  "y-raise":            { name: "Cable Y-raise", inc: 1.25 },
+  "lean-lateral":       { name: "Lean-away lateral raise", inc: 1 },
+  // Abs
+  "cable-crunch":       { name: "Cable crunch", inc: 2.5 },
+  "decline-crunch":     { name: "Weighted decline crunch", inc: 2.5, bwOk: true },
+  "hlr":                { name: "Hanging leg raise", inc: 0, bw: true },
+  "ab-wheel":           { name: "Ab wheel rollout", inc: 0, bw: true },
+  "pallof":             { name: "Pallof press", inc: 1.25 },
+  "copenhagen":         { name: "Copenhagen plank", inc: 0, bw: true },
 };
 
-ReactDOM.render(React.createElement(App), document.getElementById("root"));
+/* ------------------------------------------------------------------ */
+/* The week. Same six-day split, rebuilt for glute and back growth.    */
+/* moves[0] is the default; the rest are swaps.                        */
+/* ------------------------------------------------------------------ */
+const DAYS = [
+  { id: 1, dow: 1, name: "Back", focus: "Width",
+    intro: "Lats lead today. Pulldowns go first while you're fresh.",
+    cardio: "Rowing pairs well with back day.",
+    slots: [
+      { id: "1a", moves: ["lat-pulldown", "pull-up", "sa-pulldown"], sets: 4, reps: [6, 10], rest: 150, main: true,
+        cue: "Full stretch at the top, then drive your elbows down towards your back pockets. Think lats, not biceps." },
+      { id: "1b", moves: ["sa-db-row", "sa-cable-row", "meadows"], sets: 3, reps: [8, 12], rest: 120, uni: "side",
+        cue: "Knee and hand on the bench. Pull the dumbbell towards your hip in an arc to keep it on the lats." },
+      { id: "1c", moves: ["cs-db-row", "machine-row", "cable-row"], sets: 3, reps: [10, 12], rest: 120,
+        cue: "Chest stays on the pad. Squeeze your shoulder blades together and pause for a beat." },
+      { id: "1d", moves: ["straight-arm"], sets: 3, reps: [12, 15], rest: 60,
+        cue: "Arms long, slight hinge. Sweep the bar to your thighs using only your lats." },
+      { id: "1e", moves: ["cable-lateral", "db-lateral", "machine-lateral"], sets: 3, reps: [12, 20], rest: 60,
+        cue: "Extra side-delt work for shoulder width. Lead with the elbow, stop at shoulder height, no shrug." },
+      { id: "1f", moves: ["face-pull", "rear-delt-fly", "cable-rear-delt"], sets: 3, reps: [15, 20], rest: 60,
+        cue: "Pull towards your eyebrows with elbows high, then rotate your hands back." },
+    ] },
+  { id: 2, dow: 2, name: "Glutes heavy", focus: "Hip thrust",
+    intro: "Your heaviest glute lift of the week, then deep single-leg work.",
+    cardio: "Stairmaster or incline walk.",
+    slots: [
+      { id: "2a", moves: ["hip-thrust", "smith-hip-thrust", "machine-hip-thrust"], sets: 4, reps: [6, 10], rest: 180, main: true,
+        cue: "Chin tucked, ribs down, shins vertical at the top. One-second squeeze at lockout. This is the lift to push hardest all week." },
+      { id: "2b", moves: ["bss", "reverse-lunge", "walking-lunge"], sets: 3, reps: [8, 12], rest: 120, uni: "leg",
+        cue: "Long stance, torso leaning forward, sink until the back knee nearly touches. The deep stretch is what builds the glute." },
+      { id: "2c", moves: ["leg-press", "hack-squat", "smith-squat"], sets: 3, reps: [10, 15], rest: 120,
+        cue: "Feet high and wide. Lower as deep as you can before your pelvis starts to tuck under." },
+      { id: "2d", moves: ["machine-abduction", "cable-abduction"], sets: 3, reps: [12, 20], rest: 60,
+        cue: "Lean forward over your thighs to bias the upper glutes. Pause wide, control the return." },
+    ] },
+  { id: 3, dow: 3, name: "Shoulders and abs", focus: "Side delts",
+    intro: "Shoulder width comes from the side delts, so they get most of today's sets.",
+    cardio: "Steady incline walk.",
+    slots: [
+      { id: "3a", moves: ["ohp", "machine-press"], sets: 3, reps: [6, 10], rest: 150, main: true,
+        cue: "Lower under control to ear level, then press. Ribs down, no arching." },
+      { id: "3b", moves: ["cable-lateral", "machine-lateral", "db-lateral"], sets: 4, reps: [12, 20], rest: 60,
+        cue: "Lead with the elbow and stop at shoulder height. No swinging." },
+      { id: "3c", moves: ["y-raise", "lean-lateral"], sets: 3, reps: [12, 15], rest: 60,
+        cue: "Low pulleys crossed. Raise into a Y slightly in front of you. Light and strict." },
+      { id: "3d", moves: ["rear-delt-fly", "cable-rear-delt", "face-pull"], sets: 3, reps: [15, 20], rest: 60,
+        cue: "Arms nearly straight, sweep wide. Stop when your arms line up with your body." },
+      { id: "3e", moves: ["cable-crunch", "decline-crunch"], sets: 3, reps: [10, 15], rest: 60,
+        cue: "Hips stay still. Curl your ribs towards your pelvis and hold the squeeze." },
+      { id: "3f", moves: ["hlr", "ab-wheel"], sets: 3, reps: [8, 15], rest: 60,
+        cue: "No swinging. Curl your pelvis up at the top and lower slowly." },
+    ] },
+  { id: 4, dow: 4, name: "Glutes hinge", focus: "Stretch",
+    intro: "One heavy hinge, then glutes and hamstrings trained in the stretch.",
+    cardio: "Stairmaster. Try a few minutes sideways.",
+    slots: [
+      { id: "4a", moves: ["rdl", "db-rdl", "sumo"], sets: 4, reps: [6, 10], rest: 180, main: true,
+        cue: "Soft knees. Push your hips back until you feel a deep hamstring stretch, then drive through the floor. Neutral spine, bar close." },
+      { id: "4b", moves: ["hyperext"], sets: 3, reps: [10, 15], rest: 90,
+        cue: "Toes out, upper back slightly rounded, drive your hips into the pad. Stop at a straight line. Hold a plate once bodyweight gets easy." },
+      { id: "4c", moves: ["seated-curl", "lying-curl"], sets: 3, reps: [10, 15], rest: 90,
+        cue: "Lean your torso forward to put the hamstrings on stretch. Slow on the way back." },
+      { id: "4d", moves: ["lateral-step-up", "step-up"], sets: 3, reps: [10, 12], rest: 90, uni: "leg",
+        cue: "Box at knee height, stand side-on. No push from the bottom foot, three seconds down." },
+      { id: "4e", moves: ["cable-abduction", "machine-abduction"], sets: 2, reps: [15, 20], rest: 60, uni: "leg",
+        cue: "Ankle strap on the low pulley, lean towards the stack, sweep out and slightly back." },
+    ] },
+  { id: 5, dow: 5, name: "Back and abs", focus: "Thickness",
+    intro: "Mid-back thickness. Every row is supported, so your lower back gets a rest.",
+    cardio: "Rowing or cycling.",
+    slots: [
+      { id: "5a", moves: ["cs-row", "seal-row", "machine-row", "pendlay"], sets: 4, reps: [6, 10], rest: 150, main: true,
+        cue: "Chest glued to the pad. Row your elbows back and squeeze your shoulder blades for a beat." },
+      { id: "5b", moves: ["cable-row", "sa-cable-row"], sets: 3, reps: [8, 12], rest: 120,
+        cue: "Sit tall, reach fully forward for the stretch, row to your stomach." },
+      { id: "5c", moves: ["neutral-pulldown", "lat-pulldown", "pull-up"], sets: 3, reps: [8, 12], rest: 120,
+        cue: "Second vertical pull of the week. Full stretch at the top every rep." },
+      { id: "5d", moves: ["db-lateral", "cable-lateral", "machine-lateral"], sets: 3, reps: [12, 20], rest: 60,
+        cue: "Slight forward lean, little fingers level with thumbs, no shrug." },
+      { id: "5e", moves: ["ab-wheel", "hlr"], sets: 3, reps: [6, 12], rest: 60,
+        cue: "Ribs down, glutes squeezed. Roll out only as far as you can without your lower back sagging." },
+      { id: "5f", moves: ["pallof"], sets: 2, reps: [10, 12], rest: 45, uni: "side",
+        cue: "Press straight out and hold for two seconds without letting the cable twist you." },
+    ] },
+  { id: 6, dow: 6, name: "Glutes pump", focus: "Upper glutes",
+    intro: "Lighter thrusts, then the most abduction of your week for the shelf.",
+    cardio: "Stairmaster or incline walk.",
+    slots: [
+      { id: "6a", moves: ["smith-hip-thrust", "machine-hip-thrust", "hip-thrust"], sets: 3, reps: [10, 15], rest: 120, main: true,
+        cue: "Lighter than Tuesday. Constant tension and a two-second squeeze every rep." },
+      { id: "6b", moves: ["reverse-lunge", "bss", "walking-lunge"], sets: 3, reps: [8, 12], rest: 90, uni: "leg",
+        cue: "Front foot on a plate, step back long, lean in slightly. Push through the front heel." },
+      { id: "6c", moves: ["machine-abduction", "cable-abduction"], sets: 4, reps: [15, 25], rest: 60,
+        cue: "Two sets leaning forward, two sitting tall. Finish the last set with partial reps." },
+      { id: "6d", moves: ["kickback"], sets: 3, reps: [12, 15], rest: 45, uni: "leg",
+        cue: "Hinge forward, kick back and slightly out. Squeeze, don't swing." },
+    ] },
+];
+
+/* Old exercise IDs from v1, mapped to movements so history carries over. */
+const LEGACY = {
+  "1a": "hip-thrust", "1b": "bss", "1c": "rdl", "1d": "step-up", "1e": "kickback",
+  "2a": "barbell-row", "2b": "meadows", "2c": "cs-db-row", "2d": "lat-pulldown", "2e": "straight-arm", "2f": "face-pull",
+  "3a": "ohp", "3b": "cable-lateral", "3c": "rear-delt-fly", "3d": "db-lateral", "3e": "cable-crunch", "3f": "hlr",
+  "4a": "sumo", "4b": "hyperext", "4c": "lateral-step-up", "4d": "sl-hip-thrust", "4e": "pull-through",
+  "5a": "pendlay", "5b": "seal-row", "5c": "neutral-pulldown", "5d": "face-pull", "5e": "ab-wheel", "5f": "pallof", "5g": "copenhagen",
+  "6a": "smith-hip-thrust", "6b": "b-stance-rdl", "6c": "cable-abduction", "6d": "kickback",
+};
+
+const PHASES = [
+  { name: "Period", text: "Train as planned if you feel fine. If energy is low, keep the weights and drop a set." },
+  { name: "Follicular", text: "Energy often climbs through this phase. A good stretch to push." },
+  { name: "Around ovulation", text: "Some people feel strongest here, but the research is mixed. Let your warm-ups decide." },
+  { name: "Luteal", text: "Sleep and recovery can dip, especially late on. If a session feels flat, this is a likely reason." },
+];
+
+const RIR = { 3: ["3", "2", "0–1"], 4: ["3", "2", "1", "0–1"], 5: ["3", "2", "2", "1", "0–1"], 6: ["3", "3", "2", "2", "1", "0–1"] };
+const WEEKDAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
+/* ------------------------------------------------------------------ */
+/* Dates (local time, ISO yyyy-mm-dd strings)                          */
+/* ------------------------------------------------------------------ */
+const pad = (n) => String(n).padStart(2, "0");
+const iso = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const parse = (s) => { const p = s.split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); };
+const todayISO = () => iso(new Date());
+const addDays = (s, n) => { const d = parse(s); d.setDate(d.getDate() + n); return iso(d); };
+const mondayOf = (s) => { const d = parse(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
+const daysBetween = (a, b) => Math.round((parse(b) - parse(a)) / 86400000);
+const fmtDay = (s) => parse(s).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const fmtShort = (s) => parse(s).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+const isISO = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s);
+
+/* ------------------------------------------------------------------ */
+/* Numbers                                                             */
+/* ------------------------------------------------------------------ */
+const num = (v) => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+const fmtNum = (n) => { const r = Math.round(n * 4) / 4; return (r % 1 === 0 ? r.toFixed(0) : String(r)); };
+const e1 = (w, r) => w * (1 + r / 30); // Epley estimate
+const fmtEst = (n) => String(Math.round(n)); // estimates are rough, so whole numbers
+const fmtDelta = (d, weighted) => "+" + (weighted ? (d < 1 ? d.toFixed(1) : String(Math.round(d))) : fmtNum(d));
+const PROPER = ["Romanian", "Bulgarian", "Smith", "Meadows", "Pallof", "Copenhagen"];
+const inSentence = (name) => (PROPER.indexOf(name.split(" ")[0]) !== -1 ? name : name.charAt(0).toLowerCase() + name.slice(1));
+const restLabel = (s) => (s % 60 === 0 ? s / 60 + " min" : Math.floor(s / 60) + ":" + pad(s % 60));
+
+/* ------------------------------------------------------------------ */
+/* Storage                                                             */
+/* ------------------------------------------------------------------ */
+const PREFIX = "sp2:";
+function load(key, fallback) {
+  try { const raw = localStorage.getItem(PREFIX + key); return raw == null ? fallback : JSON.parse(raw); }
+  catch (e) { return fallback; }
+}
+function save(key, val) {
+  try { localStorage.setItem(PREFIX + key, JSON.stringify(val)); return true; }
+  catch (e) { return false; }
+}
+function useStored(key, fallback, onFail) {
+  const [val, setVal] = useState(() => load(key, fallback));
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    if (!save(key, val) && onFail) onFail();
+  }, [val]);
+  return [val, setVal];
+}
+
+const DEFAULT_TARGETS = { calories: 2400, protein: 140, carbs: 300, fat: 70 };
+function defaultSettings() {
+  return { blockStart: mondayOf(todayISO()), blockOffset: 0, loadWeeks: 4, sound: true, vibrate: true, wakeLock: true,
+    cycleStart: "", cycleLength: 28, targets: DEFAULT_TARGETS, migratedAt: null };
+}
+
+/* One-off: bring v1 data across. Old keys are left in place untouched. */
+function init() {
+  if (load("settings", null) == null) save("settings", defaultSettings());
+  if (localStorage.getItem(PREFIX + "migrated")) return;
+  const old = (k) => { try { const r = localStorage.getItem("sculptor_" + k); return r ? JSON.parse(r) : null; } catch (e) { return null; } };
+  const exLogs = old("exLogs"), sessionLogs = old("sessionLogs"), macroLog = old("macroLog");
+  const cycleStart = old("cycleStart"), cycleLength = old("cycleLength");
+  const found = !!(exLogs || sessionLogs || macroLog || cycleStart);
+  if (found) {
+    const logs = load("logs", {});
+    Object.keys(exLogs || {}).forEach((k) => {
+      const date = k.slice(-10), key = LEGACY[k.slice(0, -11)];
+      if (!key || !isISO(date)) return;
+      const entry = exLogs[k] || {};
+      const sets = (entry.rows || []).filter((r) => num(r.reps) > 0)
+        .map((r) => ({ w: num(r.weight) ? String(num(r.weight)) : "", r: String(num(r.reps)), done: true }));
+      if (!sets.length && !entry.notes) return;
+      logs[key] = logs[key] || {};
+      const cur = logs[key][date];
+      logs[key][date] = cur ? Object.assign({}, cur, { sets: cur.sets.concat(sets) }) : { sets: sets, note: entry.notes || "" };
+    });
+    save("logs", logs);
+    const sessions = load("sessions", []);
+    (sessionLogs || []).forEach((s) => {
+      if (!s || !s.ts || !s.dayId) return;
+      const date = iso(new Date(s.ts));
+      if (!sessions.some((x) => x.day === s.dayId && x.date === date)) sessions.push({ day: s.dayId, date: date, ts: s.ts, legacy: true });
+    });
+    save("sessions", sessions);
+    const food = load("food", {});
+    Object.keys(macroLog || {}).forEach((d) => {
+      const m = macroLog[d] || {};
+      food[d] = { calories: num(m.calories), protein: num(m.protein), carbs: num(m.carbs), fat: num(m.fat) };
+    });
+    save("food", food);
+    const st = Object.assign(defaultSettings(), load("settings", {}));
+    if (cycleStart) st.cycleStart = cycleStart;
+    if (cycleLength) st.cycleLength = num(cycleLength) || 28;
+    st.migratedAt = todayISO();
+    save("settings", st);
+  }
+  localStorage.setItem(PREFIX + "migrated", "1");
+}
+
+/* ------------------------------------------------------------------ */
+/* Training blocks                                                     */
+/* ------------------------------------------------------------------ */
+function blockInfo(st, today) {
+  const L = RIR[st.loadWeeks] ? st.loadWeeks : 4, len = L + 1;
+  const start = isISO(st.blockStart) ? mondayOf(st.blockStart) : mondayOf(today);
+  const w = Math.max(0, Math.floor(daysBetween(start, mondayOf(today)) / 7));
+  const week = w % len;
+  return { block: Math.floor(w / len) + 1 + (st.blockOffset || 0), week: week, weeks: len, loadWeeks: L,
+    deload: week === L, rir: week === L ? null : RIR[L][week], last: week === L - 1 };
+}
+function effortLine(b) {
+  if (b.deload) return "Deload week";
+  if (b.rir === "0–1") return "Go to failure, or one rep short";
+  return "Stop " + b.rir + (b.rir === "1" ? " rep" : " reps") + " short of failure";
+}
+function blockAdvice(b) {
+  if (b.deload) return "Half the sets, same weights, stopping four or more reps short. You should leave feeling fresh. A new block starts next week.";
+  if (b.week === 0) return "Settle in. Use weights that leave three good reps in the tank.";
+  if (b.last) return "Hardest week of the block. Take machines and isolations to failure, but keep one rep in reserve on RDLs, rows and hip thrusts.";
+  return "Add a rep or a little weight wherever you can.";
+}
+
+/* ------------------------------------------------------------------ */
+/* History, PRs and suggestions                                        */
+/* ------------------------------------------------------------------ */
+function doneSets(entry) {
+  return ((entry && entry.sets) || []).filter((s) => s.done && num(s.r) > 0).map((s) => ({ w: num(s.w), r: num(s.r) }));
+}
+function historyOf(logs, key) { // oldest first
+  const by = logs[key] || {};
+  return Object.keys(by).sort()
+    .map((d) => ({ date: d, sets: doneSets(by[d]), note: by[d].note || "", dl: !!by[d].dl }))
+    .filter((s) => s.sets.length);
+}
+const isWeighted = (hist) => hist.some((s) => s.sets.some((x) => x.w > 0));
+const bestOf = (sets, weighted) => sets.reduce((m, s) => Math.max(m, weighted ? e1(s.w, s.r) : s.r), 0);
+const topSet = (sets) => sets.reduce((b, s) => (!b || s.w > b.w || (s.w === b.w && s.r > b.r) ? s : b), null);
+const volumeOf = (sets) => sets.reduce((t, s) => t + s.w * s.r, 0);
+const summarise = (sets) => sets.map((s) => (s.w ? fmtNum(s.w) : "BW") + "×" + s.r).join(", ");
+
+function prEvents(logs) {
+  const out = [];
+  Object.keys(logs).forEach((key) => {
+    if (!M[key]) return;
+    const h = historyOf(logs, key);
+    const weighted = isWeighted(h);
+    let best = 0;
+    h.forEach((s) => {
+      const b = bestOf(s.sets, weighted);
+      if (best > 0 && b > best + 0.01) out.push({ key: key, date: s.date, value: b, prev: best, weighted: weighted });
+      best = Math.max(best, b);
+    });
+  });
+  return out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
+}
+
+function suggest(slot, mv, prev, b) {
+  const lo = slot.reps[0], hi = slot.reps[1];
+  const n = b.deload ? Math.ceil(slot.sets / 2) : slot.sets;
+  const fill = (w, r) => Array.from({ length: n }, () => ({ w: w, r: r }));
+  if (!prev) {
+    return { n: n, rows: [], text: b.deload
+      ? "Deload week. Pick a comfortable weight and keep every set easy."
+      : mv.bw ? "First time on this one. Log what you manage and beat it next time."
+      : mv.bwOk ? "First time on this one. Start with bodyweight and add a plate once you hit the top of the range."
+      : "First time on this one. Pick a weight you could lift for a few more reps than the range asks." };
+  }
+  const topW = Math.max.apply(null, prev.sets.map((s) => s.w));
+  if (b.deload) {
+    return { n: n, rows: fill(topW || "", lo),
+      text: (topW ? "Deload: " + fmtNum(topW) + "kg for " : "Deload: ") + lo + " smooth reps, well short of failure." };
+  }
+  const atTop = prev.sets.filter((s) => s.w === topW);
+  const toppedOut = atTop.length >= slot.sets && atTop.every((s) => s.r >= hi);
+  const rows = Array.from({ length: n }, (_, i) => ({ w: prev.sets[i] ? prev.sets[i].w || "" : topW || "", r: prev.sets[i] ? prev.sets[i].r : lo }));
+  if (!topW) {
+    if (toppedOut) return { n: n, rows: rows, text: mv.bw
+      ? "You hit the top of the range. Slow the lowering to three seconds to keep progressing."
+      : "You hit the top of the range. Add some weight this time." };
+    return { n: n, rows: rows, text: "Beat last time by a rep somewhere." };
+  }
+  if (toppedOut && mv.inc) {
+    const w = Math.round((topW + mv.inc) * 100) / 100;
+    return { n: n, rows: fill(w, lo), text: "You hit " + hi + " on every set. Go up to " + fmtNum(w) + "kg and build back up from " + lo + "." };
+  }
+  return { n: n, rows: rows, text: "Stay at " + fmtNum(topW) + "kg and add a rep where you can." };
+}
+
+function cycleInfo(st, today) {
+  if (!isISO(st.cycleStart)) return null;
+  const len = Math.max(21, Math.min(40, num(st.cycleLength) || 28));
+  const diff = daysBetween(st.cycleStart, today);
+  if (diff < 0) return null;
+  const day = (diff % len) + 1, ov = len - 14;
+  const p = day <= 5 ? 0 : day < ov - 1 ? 1 : day <= ov + 1 ? 2 : 3;
+  return { day: day, len: len, phase: PHASES[p], next: len - day + 1 };
+}
+
+/* ------------------------------------------------------------------ */
+/* Rest timer alerts                                                   */
+/* ------------------------------------------------------------------ */
+let audioCtx = null;
+function primeAudio() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+  } catch (e) { /* no audio available */ }
+}
+function beep() {
+  if (!audioCtx) return;
+  const t = audioCtx.currentTime;
+  [0, 0.22, 0.44].forEach((o) => {
+    const osc = audioCtx.createOscillator(), g = audioCtx.createGain();
+    osc.frequency.value = 880;
+    g.gain.setValueAtTime(0.0001, t + o);
+    g.gain.exponentialRampToValueAtTime(0.28, t + o + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + o + 0.16);
+    osc.connect(g); g.connect(audioCtx.destination);
+    osc.start(t + o); osc.stop(t + o + 0.18);
+  });
+}
+
+function useWakeLock(on) {
+  useEffect(() => {
+    if (!on || !("wakeLock" in navigator)) return;
+    let lock = null, alive = true;
+    const request = () => { navigator.wakeLock.request("screen").then((l) => { if (alive) lock = l; else l.release(); }).catch(() => {}); };
+    const onVis = () => { if (document.visibilityState === "visible") request(); };
+    request();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { alive = false; document.removeEventListener("visibilitychange", onVis); if (lock) lock.release().catch(() => {}); };
+  }, [on]);
+}
+
+function useToday() {
+  const [t, setT] = useState(todayISO());
+  useEffect(() => {
+    const id = setInterval(() => { const n = todayISO(); setT((p) => (p === n ? p : n)); }, 30000);
+    return () => clearInterval(id);
+  }, []);
+  return t;
+}
+
+/* ------------------------------------------------------------------ */
+/* Icons                                                               */
+/* ------------------------------------------------------------------ */
+const Icon = {
+  check: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  back: html`<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  train: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 9v6M6 7v10M18 7v10M21 9v6M6 12h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`,
+  progress: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M3 18l6-6 4 4 8-9" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M15 7h6v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`,
+  settings: html`<svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="7" r="2" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="10" cy="17" r="2" fill="none" stroke="currentColor" stroke-width="2"/></svg>`,
+};
+
+/* ------------------------------------------------------------------ */
+/* Shared pieces                                                       */
+/* ------------------------------------------------------------------ */
+function Sheet({ open, onClose, title, children }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+  if (!open) return null;
+  return html`
+    <div className="sheet-backdrop" onClick=${onClose}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label=${title} onClick=${(e) => e.stopPropagation()}>
+        <div className="sheet-head">
+          <h2 className="sheet-title">${title}</h2>
+          <button className="text-btn" onClick=${onClose}>Close</button>
+        </div>
+        ${children}
+      </div>
+    </div>`;
+}
+
+function Toast({ toast }) {
+  if (!toast) return null;
+  return html`<div className=${"toast" + (toast.kind === "pr" ? " toast-pr" : "")} role="status">${toast.msg}</div>`;
+}
+
+function Toggle({ label, hint, checked, onChange }) {
+  return html`
+    <label className="toggle-row">
+      <span><span className="toggle-label">${label}</span>${hint ? html`<span className="hint">${hint}</span>` : null}</span>
+      <input type="checkbox" className="switch" checked=${checked} onChange=${(e) => onChange(e.target.checked)} />
+    </label>`;
+}
+
+/* The rest timer slab. The rose fill drains as rest runs out; the text is
+   drawn twice and clipped so it stays readable on both halves. */
+function TimerBar({ timer, setTimer, settings, raised }) {
+  const [now, setNow] = useState(Date.now());
+  const alerted = useRef(null);
+  useEffect(() => {
+    if (!timer) return;
+    const id = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(id);
+  }, [timer]);
+  const left = timer ? Math.max(0, timer.endAt - now) : 0;
+  const finished = !!timer && left <= 0;
+  useEffect(() => {
+    if (!finished || alerted.current === timer.endAt) return;
+    alerted.current = timer.endAt;
+    if (now - timer.endAt < 5000) { // don't beep for a timer that ran out while the app was closed
+      if (settings.sound) beep();
+      if (settings.vibrate && navigator.vibrate) navigator.vibrate([220, 120, 220]);
+    }
+    const id = setTimeout(() => setTimer((t) => (t && t.endAt === timer.endAt ? null : t)), 20000);
+    return () => clearTimeout(id);
+  }, [finished]);
+  if (!timer) return null;
+  const secs = Math.ceil(left / 1000);
+  const frac = finished ? 1 : Math.min(1, left / (timer.total * 1000));
+  const clock = Math.floor(secs / 60) + ":" + pad(secs % 60);
+  const adjust = (d) => setTimer((t) => (t ? Object.assign({}, t, { endAt: Math.max(Date.now() + 1000, t.endAt + d * 1000), total: Math.max(1, t.total + d) }) : t));
+  const face = (live) => html`
+    <div className="timer-face">
+      <div className="timer-read">
+        <span className="timer-clock">${finished ? "Go" : clock}</span>
+        <span className="timer-label">${finished ? "Rest's up. " + timer.label : timer.label}</span>
+      </div>
+      <div className="timer-actions">
+        ${finished ? null : html`
+          <button className="timer-btn" tabIndex=${live ? 0 : -1} aria-label="Take 15 seconds off" onClick=${live ? () => adjust(-15) : null}>−15</button>
+          <button className="timer-btn" tabIndex=${live ? 0 : -1} aria-label="Add 15 seconds" onClick=${live ? () => adjust(15) : null}>+15</button>`}
+        <button className="timer-btn" tabIndex=${live ? 0 : -1} onClick=${live ? () => setTimer(null) : null}>${finished ? "Dismiss" : "Skip"}</button>
+      </div>
+    </div>`;
+  return html`
+    <div className=${"timer" + (raised ? " timer-raised" : "") + (finished ? " timer-done" : "")} role="timer" aria-live="off" aria-label=${"Rest timer, " + clock + " left"}>
+      ${face(true)}
+      <div className="timer-fill" aria-hidden="true" style=${{ clipPath: "inset(0 " + ((1 - frac) * 100).toFixed(2) + "% 0 0)" }}>${face(false)}</div>
+    </div>`;
+}
+
+function Nav({ tab, go }) {
+  const item = (id, label, icon) => html`
+    <button className=${"nav-item" + (tab === id ? " is-active" : "")} aria-current=${tab === id ? "page" : null} onClick=${() => go(id)}>
+      ${icon}<span>${label}</span>
+    </button>`;
+  return html`<nav className="nav" aria-label="Main">${item("train", "Train", Icon.train)}${item("progress", "Progress", Icon.progress)}${item("settings", "Settings", Icon.settings)}</nav>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Home                                                                */
+/* ------------------------------------------------------------------ */
+function WeekStrip({ b }) {
+  return html`
+    <div className="weekstrip" aria-hidden="true">
+      ${Array.from({ length: b.weeks }, (_, i) => html`
+        <span key=${i} className=${"seg" + (i === b.loadWeeks ? " seg-deload" : "") + (i < b.week ? " seg-past" : "") + (i === b.week ? " seg-now" : "")}></span>`)}
+    </div>`;
+}
+
+function Home({ today, b, settings, setSettings, sessions, food, setFood, openDay, swaps }) {
+  const weekStart = mondayOf(today), weekEnd = addDays(weekStart, 6);
+  const doneOn = (id) => sessions.filter((s) => s.day === id && s.date >= weekStart && s.date <= weekEnd).map((s) => s.date).sort().pop();
+  const dow = parse(today).getDay();
+  const todays = DAYS.find((d) => d.dow === dow);
+  const pending = DAYS.filter((d) => !doneOn(d.id));
+  const hero = todays && !doneOn(todays.id) ? todays : pending.find((d) => d.dow > dow) || pending[0] || null;
+  const heroLead = !hero ? "Week complete" : hero === todays ? WEEKDAYS[dow] : todays ? "Up next" : "Rest day. Up next";
+  const cyc = cycleInfo(settings, today);
+  const [foodOpen, setFoodOpen] = useState(false);
+  const moveName = (slot) => M[swaps[slot.id]] ? M[swaps[slot.id]].name : M[slot.moves[0]].name;
+
+  const deloadNow = () => setSettings((s) => Object.assign({}, s, { blockStart: addDays(mondayOf(today), -7 * b.loadWeeks), blockOffset: b.block - 1 }));
+
+  return html`
+    <main className="screen home">
+      <header className="topbar"><span className="wordmark">Sculptor</span></header>
+
+      <section className="hero" aria-labelledby="hero-name">
+        <p className="hero-lead">${heroLead}</p>
+        ${hero ? html`
+          <h1 id="hero-name" className="display hero-name">${hero.name}</h1>
+          <p className="hero-focus">${hero.intro}</p>
+          <p className="hero-list">${hero.slots.map((sl, i) => (i ? inSentence(moveName(sl)) : moveName(sl))).join(", ")}.</p>
+          <button className="primary" onClick=${() => openDay(hero.id)}>Start session</button>` : html`
+          <h1 id="hero-name" className="display hero-name">All six done</h1>
+          <p className="hero-focus">Rest up. Next week's first session is back day.</p>`}
+      </section>
+
+      <section className=${"block" + (b.deload ? " block-deload" : "")} aria-label="Training block">
+        <div className="block-row">
+          <h2 className="block-title">Block ${b.block}</h2>
+          <span className="block-week">${b.deload ? "Deload week" : "Week " + (b.week + 1) + " of " + b.weeks}</span>
+        </div>
+        <${WeekStrip} b=${b} />
+        <p className="block-effort">${effortLine(b)}</p>
+        <p className="block-advice">${blockAdvice(b)}</p>
+        ${!b.deload ? html`<button className="text-btn" onClick=${deloadNow}>Deload this week instead</button>` : null}
+      </section>
+
+      <section aria-labelledby="week-h">
+        <h2 id="week-h" className="section-title">This week</h2>
+        <ul className="days">
+          ${DAYS.map((d) => {
+            const done = doneOn(d.id);
+            return html`
+              <li key=${d.id}>
+                <button className=${"day-row" + (done ? " is-done" : "") + (d.dow === dow ? " is-today" : "")} onClick=${() => openDay(d.id)}>
+                  <span className="day-dow">${WEEKDAYS[d.dow].slice(0, 3)}</span>
+                  <span className="day-text"><span className="day-name">${d.name}</span><span className="day-focus">${d.focus}</span></span>
+                  <span className="day-state">${done ? html`<span className="done-mark">${Icon.check}<span className="sr">Done ${fmtDay(done)}</span></span>` : null}</span>
+                </button>
+              </li>`;
+          })}
+        </ul>
+      </section>
+
+      ${cyc ? html`
+        <section className="panel" aria-labelledby="cyc-h">
+          <h2 id="cyc-h" className="section-title">Cycle day ${cyc.day}</h2>
+          <p className="panel-strong">${cyc.phase.name}</p>
+          <p className="panel-text">${cyc.phase.text}</p>
+          <p className="hint">Next period due in about ${cyc.next} ${cyc.next === 1 ? "day" : "days"}.</p>
+        </section>` : null}
+
+      <${FoodPanel} today=${today} food=${food} setFood=${setFood} targets=${settings.targets} open=${foodOpen} setOpen=${setFoodOpen} />
+    </main>`;
+}
+
+const FOOD_KEYS = [["calories", "Calories", "kcal"], ["protein", "Protein", "g"], ["carbs", "Carbs", "g"], ["fat", "Fat", "g"]];
+function FoodPanel({ today, food, setFood, targets, open, setOpen }) {
+  const f = food[today] || {};
+  const [draft, setDraft] = useState({});
+  useEffect(() => { if (open) setDraft(Object.assign({}, f)); }, [open]);
+  const saveFood = () => {
+    const clean = {};
+    FOOD_KEYS.forEach(([k]) => { clean[k] = num(draft[k]); });
+    setFood((prev) => Object.assign({}, prev, { [today]: clean }));
+    setOpen(false);
+  };
+  return html`
+    <section className="panel" aria-labelledby="food-h">
+      <div className="block-row">
+        <h2 id="food-h" className="section-title">Food today</h2>
+        <button className="text-btn" onClick=${() => setOpen(true)}>Update</button>
+      </div>
+      <div className="food-bars">
+        ${FOOD_KEYS.map(([k, label, unit]) => {
+          const v = num(f[k]), t = num(targets[k]) || 1;
+          return html`
+            <div key=${k} className="food-bar">
+              <div className="food-top"><span>${label}</span><span className="food-num">${fmtNum(v)}<span className="food-of"> / ${fmtNum(t)}${unit}</span></span></div>
+              <div className="meter"><span style=${{ width: Math.min(100, (v / t) * 100) + "%" }}></span></div>
+            </div>`;
+        })}
+      </div>
+      <${Sheet} open=${open} onClose=${() => setOpen(false)} title="Food today">
+        <p className="hint">Enter today's running totals.</p>
+        <div className="form-grid">
+          ${FOOD_KEYS.map(([k, label, unit]) => html`
+            <label key=${k} className="form-field">
+              <span>${label} (${unit})</span>
+              <input inputMode="decimal" value=${draft[k] == null || draft[k] === 0 ? "" : draft[k]} placeholder="0"
+                onChange=${(e) => { const v = e.target.value; setDraft((d) => Object.assign({}, d, { [k]: v })); }} />
+            </label>`)}
+        </div>
+        <button className="primary wide" onClick=${saveFood}>Save totals</button>
+      <//>
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Session screen                                                      */
+/* ------------------------------------------------------------------ */
+function DayView({ day, today, b, logs, setLogs, swaps, setSwaps, sessions, setSessions, cardio, setCardio, startTimer, notify, settings, onBack }) {
+  useWakeLock(settings.wakeLock);
+  const [swapSlot, setSwapSlot] = useState(null);
+  const [summary, setSummary] = useState(null);
+  const moveOf = (slot) => (swaps[slot.id] && M[swaps[slot.id]] ? swaps[slot.id] : slot.moves[0]);
+  const already = sessions.find((s) => s.day === day.id && s.date === today);
+  const cardioKey = today + ":" + day.id;
+  const dowName = WEEKDAYS[parse(today).getDay()];
+
+  const finish = () => {
+    let sets = 0, vol = 0;
+    day.slots.forEach((slot) => {
+      const d = doneSets(logs[moveOf(slot)] && logs[moveOf(slot)][today]);
+      sets += d.length; vol += volumeOf(d);
+    });
+    const keys = day.slots.map(moveOf);
+    const prs = prEvents(logs).filter((p) => p.date === today && keys.indexOf(p.key) !== -1);
+    setSessions((prev) => prev.filter((s) => !(s.day === day.id && s.date === today))
+      .concat([{ day: day.id, date: today, ts: Date.now(), block: b.block, week: b.week + 1, deload: b.deload }]));
+    setSummary({ sets: sets, vol: vol, prs: prs });
+  };
+
+  return html`
+    <main className="screen dayview">
+      <header className="dayhead">
+        <button className="back-btn" onClick=${onBack}>${Icon.back}<span>Back</span></button>
+        <h1 className="display day-title">${day.name}</h1>
+        <p className="day-intro">${day.intro}</p>
+        <p className=${"day-effort" + (b.deload ? " is-deload" : "")}>${b.deload ? "Deload week: half the sets, keep it easy." : "Block " + b.block + ", week " + (b.week + 1) + ". " + effortLine(b) + "."}</p>
+      </header>
+
+      ${day.slots.map((slot, i) => {
+        const next = day.slots[i + 1];
+        return html`<${Exercise} key=${slot.id + moveOf(slot)} slot=${slot} move=${moveOf(slot)} today=${today} b=${b}
+          logs=${logs} setLogs=${setLogs} startTimer=${startTimer} notify=${notify}
+          nextName=${next ? M[moveOf(next)].name : null} onSwap=${() => setSwapSlot(slot)} />`;
+      })}
+
+      <label className="cardio-row">
+        <input type="checkbox" className="box" checked=${!!cardio[cardioKey]}
+          onChange=${(e) => { const v = e.target.checked; setCardio((c) => { const n = Object.assign({}, c); if (v) n[cardioKey] = true; else delete n[cardioKey]; return n; }); }} />
+        <span><span className="cardio-title">20 min cardio finisher</span><span className="hint">${day.cardio}</span></span>
+      </label>
+
+      <button className="primary wide finish" onClick=${finish}>${already ? "Update session" : "Finish session"}</button>
+      <p className="hint center">${already ? "Logged " + dowName + ". Your sets save as you go." : "Your sets save as you go. Finishing marks the day done."}</p>
+
+      <${Sheet} open=${!!swapSlot} onClose=${() => setSwapSlot(null)} title="Swap exercise">
+        ${swapSlot ? html`
+          <p className="hint">Each option keeps its own history.</p>
+          <ul className="swap-list">
+            ${swapSlot.moves.map((k) => html`
+              <li key=${k}>
+                <button className=${"swap-opt" + (moveOf(swapSlot) === k ? " is-on" : "")} aria-pressed=${moveOf(swapSlot) === k}
+                  onClick=${() => { setSwaps((s) => { const n = Object.assign({}, s); if (k === swapSlot.moves[0]) delete n[swapSlot.id]; else n[swapSlot.id] = k; return n; }); setSwapSlot(null); }}>
+                  <span>${M[k].name}</span>${k === swapSlot.moves[0] ? html`<span className="hint">Programmed</span>` : null}
+                </button>
+              </li>`)}
+          </ul>` : null}
+      <//>
+
+      <${Sheet} open=${!!summary} onClose=${() => { setSummary(null); onBack(); }} title="Session logged">
+        ${summary ? html`
+          <div className="summary-stats">
+            <div><span className="display stat-num">${summary.sets}</span><span className="stat-label">sets</span></div>
+            <div><span className="display stat-num">${Math.round(summary.vol).toLocaleString("en-GB")}</span><span className="stat-label">kg lifted</span></div>
+            <div><span className="display stat-num">${summary.prs.length}</span><span className="stat-label">${summary.prs.length === 1 ? "PR" : "PRs"}</span></div>
+          </div>
+          ${summary.prs.length ? html`
+            <ul className="pr-list">
+              ${summary.prs.map((p) => html`<li key=${p.key}><span>${M[p.key].name}</span><span className="pr-val">${p.weighted ? fmtEst(p.value) + "kg est. max" : fmtNum(p.value) + " reps"}</span></li>`)}
+            </ul>` : null}
+          <button className="primary wide" onClick=${() => { setSummary(null); onBack(); }}>Done</button>` : null}
+      <//>
+    </main>`;
+}
+
+function Exercise({ slot, move, today, b, logs, setLogs, startTimer, notify, nextName, onSwap }) {
+  const mv = M[move];
+  const entry = (logs[move] && logs[move][today]) || { sets: [], note: "" };
+  const hist = useMemo(() => historyOf(logs, move), [logs, move]);
+  const before = hist.filter((s) => s.date < today);
+  const lastShown = before[before.length - 1] || null;
+  const prev = before.slice().reverse().find((s) => !s.dl) || lastShown;
+  const sug = suggest(slot, mv, prev, b);
+  const rowsN = Math.max(sug.n, entry.sets.length);
+  const [cueOpen, setCueOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(!!entry.note);
+  const doneN = entry.sets.filter((s) => s.done).length;
+  const unit = slot.uni ? " per " + slot.uni : "";
+
+  const update = (fn) => setLogs((all) => {
+    const by = Object.assign({}, all[move] || {});
+    const cur = by[today] || { sets: [], note: "" };
+    const next = fn(Object.assign({}, cur, { sets: cur.sets.map((s) => Object.assign({}, s)) }));
+    if (b.deload) next.dl = true;
+    by[today] = next;
+    return Object.assign({}, all, { [move]: by });
+  });
+  const grow = (e, i) => { while (e.sets.length <= i) e.sets.push({ w: "", r: "", done: false }); };
+  const setField = (i, f, v) => update((e) => { grow(e, i); e.sets[i][f] = v; return e; });
+
+  const weightHint = (i) => {
+    for (let j = i - 1; j >= 0; j--) { const pr = entry.sets[j]; if (pr && pr.w !== "" && pr.w != null) return String(pr.w); }
+    const r = sug.rows[i] || sug.rows[sug.rows.length - 1];
+    return r && r.w !== "" && r.w != null ? fmtNum(r.w) : (mv.bw ? "BW" : "");
+  };
+  const repsHint = (i) => { const r = sug.rows[i] || sug.rows[sug.rows.length - 1]; return r && r.r ? String(r.r) : String(slot.reps[0]) + "–" + slot.reps[1]; };
+
+  const toggle = (i) => {
+    const cur = entry.sets[i] || { w: "", r: "", done: false };
+    if (cur.done) { setField(i, "done", false); return; }
+    const wh = weightHint(i), rh = repsHint(i);
+    const w = cur.w !== "" && cur.w != null ? cur.w : (/^\d/.test(wh) ? wh : "");
+    const r = cur.r !== "" && cur.r != null ? cur.r : (/^\d+$/.test(rh) ? rh : "");
+    if (!num(r)) { notify("Add your reps, then tick the set."); return; }
+    primeAudio();
+    update((e) => { grow(e, i); e.sets[i] = { w: w === "" ? "" : String(w), r: String(r), done: true, t: Date.now() }; return e; });
+    // PR check against every earlier day, and today's other sets
+    const weighted = isWeighted(hist) || num(w) > 0;
+    const val = weighted ? e1(num(w), num(r)) : num(r);
+    const prior = before.reduce((m, s) => Math.max(m, bestOf(s.sets, weighted)), 0);
+    const others = bestOf(doneSets({ sets: entry.sets.filter((_, j) => j !== i) }), weighted);
+    if (prior > 0 && val > prior + 0.01 && val > others + 0.01) {
+      notify(weighted ? "New PR on " + inSentence(mv.name) + ". Estimated max " + fmtEst(val) + "kg." : "New PR on " + inSentence(mv.name) + ". " + num(r) + " reps.", "pr");
+    }
+    const last = doneN + 1 >= rowsN;
+    startTimer(slot.rest, last ? (nextName ? "Next: " + nextName : "That was the last exercise") : "Set " + (doneN + 2) + " of " + rowsN);
+  };
+
+  const addSet = () => update((e) => { grow(e, rowsN); return e; });
+  const canRemove = entry.sets.length > sug.n && !entry.sets[entry.sets.length - 1].done;
+  const removeSet = () => update((e) => { e.sets.pop(); return e; });
+
+  return html`
+    <section className=${"ex" + (slot.main ? " ex-main" : "") + (doneN >= rowsN ? " ex-complete" : "")} aria-label=${mv.name}>
+      <div className="ex-head">
+        <div>
+          ${slot.main ? html`<p className="ex-tag">Main lift</p>` : null}
+          <h2 className="ex-name">${mv.name}</h2>
+          <p className="ex-target">${sug.n} ${sug.n === 1 ? "set" : "sets"} of ${slot.reps[0]}–${slot.reps[1]}${unit}<span className="ex-rest">Rest ${restLabel(slot.rest)}</span></p>
+        </div>
+        ${slot.moves.length > 1 ? html`<button className="chip" onClick=${onSwap}>Swap</button>` : null}
+      </div>
+
+      <p className="ex-last">${lastShown ? "Last time, " + fmtDay(lastShown.date) + ": " + summarise(lastShown.sets) : "No history yet."}</p>
+      <p className="ex-sug">${sug.text}</p>
+
+      <div className="sets" role="group" aria-label=${"Sets for " + mv.name}>
+        ${Array.from({ length: rowsN }, (_, i) => {
+          const s = entry.sets[i] || {};
+          return html`
+            <div key=${i} className=${"set" + (s.done ? " is-done" : "")}>
+              <span className="set-n" aria-hidden="true">${i + 1}</span>
+              <label className="field">
+                <input inputMode="decimal" enterKeyHint="next" value=${s.w == null ? "" : s.w} placeholder=${weightHint(i)}
+                  aria-label=${"Set " + (i + 1) + " weight in kilograms"} onChange=${(e) => setField(i, "w", e.target.value.replace(",", "."))} />
+                <span className="unit">kg</span>
+              </label>
+              <label className="field">
+                <input inputMode="numeric" enterKeyHint="done" className=${repsHint(i).indexOf("–") !== -1 ? "is-range" : ""} value=${s.r == null ? "" : s.r} placeholder=${repsHint(i)}
+                  aria-label=${"Set " + (i + 1) + " reps"} onChange=${(e) => setField(i, "r", e.target.value.replace(/[^\d]/g, ""))} />
+                <span className="unit">reps</span>
+              </label>
+              <button className="tick" aria-pressed=${!!s.done} aria-label=${(s.done ? "Undo set " : "Log set ") + (i + 1)} onClick=${() => toggle(i)}>${Icon.check}</button>
+            </div>`;
+        })}
+      </div>
+
+      <div className="ex-tools">
+        <button className="text-btn" onClick=${addSet}>Add set</button>
+        ${canRemove ? html`<button className="text-btn" onClick=${removeSet}>Remove set</button>` : null}
+        <button className="text-btn" aria-expanded=${cueOpen} onClick=${() => setCueOpen(!cueOpen)}>Form cue</button>
+        <button className="text-btn" aria-expanded=${noteOpen} onClick=${() => setNoteOpen(!noteOpen)}>Note</button>
+      </div>
+      ${cueOpen ? html`<p className="ex-cue">${slot.cue}</p>` : null}
+      ${noteOpen ? html`
+        <textarea className="note" rows="2" placeholder="How it felt, machine settings, form notes"
+          value=${entry.note || ""} onChange=${(e) => { const v = e.target.value; update((x) => { x.note = v; return x; }); }}></textarea>` : null}
+      ${lastShown && lastShown.note ? html`<p className="hint">Last note: ${lastShown.note}</p>` : null}
+    </section>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Charts                                                              */
+/* ------------------------------------------------------------------ */
+function Sparkline({ values }) {
+  if (values.length < 2) return html`<span className="spark spark-empty" aria-hidden="true"></span>`;
+  const W = 88, H = 28, lo = Math.min.apply(null, values), hi = Math.max.apply(null, values), span = hi - lo || 1;
+  const d = values.map((v, i) => (i ? "L" : "M") + ((i / (values.length - 1)) * (W - 4) + 2).toFixed(1) + "," + (H - 3 - ((v - lo) / span) * (H - 6)).toFixed(1)).join(" ");
+  return html`<svg className="spark" viewBox=${"0 0 " + W + " " + H} width=${W} height=${H} aria-hidden="true"><path d=${d} fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function Chart({ points, unit, label, fmt }) {
+  if (points.length < 2) return html`<p className="empty">Log this twice to see a trend line.</p>`;
+  const W = 340, H = 200, P = { l: 6, r: 46, t: 16, b: 28 };
+  const xs = points.map((p) => parse(p.date).getTime()), ys = points.map((p) => p.y);
+  let lo = Math.min.apply(null, ys), hi = Math.max.apply(null, ys);
+  if (hi === lo) { hi += 1; lo -= 1; }
+  const padY = (hi - lo) * 0.14; lo -= padY; hi += padY;
+  const x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs);
+  const sx = (x) => P.l + ((x - x0) / (x1 - x0 || 1)) * (W - P.l - P.r);
+  const sy = (y) => P.t + (1 - (y - lo) / (hi - lo)) * (H - P.t - P.b);
+  const line = points.map((p, i) => (i ? "L" : "M") + sx(xs[i]).toFixed(1) + "," + sy(p.y).toFixed(1)).join(" ");
+  const area = line + " L" + sx(x1).toFixed(1) + "," + (H - P.b) + " L" + sx(x0).toFixed(1) + "," + (H - P.b) + " Z";
+  const ticks = [0.2, 0.5, 0.8].map((f) => lo + (hi - lo) * f);
+  const last = points[points.length - 1], first = points[0];
+  return html`
+    <figure className="chart">
+      <svg viewBox=${"0 0 " + W + " " + H} role="img" aria-label=${label + ": " + fmt(first.y) + unit + " on " + fmtShort(first.date) + " to " + fmt(last.y) + unit + " on " + fmtShort(last.date)}>
+        <defs><linearGradient id="chart-fill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--flush)" stop-opacity="0.32"/><stop offset="1" stop-color="var(--flush)" stop-opacity="0"/></linearGradient></defs>
+        ${ticks.map((t, i) => html`<g key=${i}>
+          <line x1=${P.l} x2=${W - P.r} y1=${sy(t)} y2=${sy(t)} className="chart-grid"/>
+          <text x=${W - P.r + 8} y=${sy(t) + 4} className="chart-tick">${fmt(t)}</text></g>`)}
+        <path d=${area} fill="url(#chart-fill)"/>
+        <path d=${line} fill="none" stroke="var(--flush)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        ${points.map((p, i) => html`<circle key=${i} cx=${sx(xs[i])} cy=${sy(p.y)} r=${p.pr ? 5 : 3} className=${p.pr ? "dot-pr" : "dot"}/>`)}
+        <text x=${P.l} y=${H - 8} className="chart-tick">${fmtShort(first.date)}</text>
+        <text x=${W - P.r} y=${H - 8} className="chart-tick" text-anchor="end">${fmtShort(last.date)}</text>
+      </svg>
+    </figure>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Progress                                                            */
+/* ------------------------------------------------------------------ */
+function Progress({ logs, openMove }) {
+  const prs = useMemo(() => prEvents(logs), [logs]);
+  const lifts = useMemo(() => Object.keys(logs).filter((k) => M[k]).map((k) => {
+    const h = historyOf(logs, k), weighted = isWeighted(h);
+    if (!h.length) return null;
+    const series = h.map((s) => bestOf(s.sets, weighted));
+    return { key: k, h: h, weighted: weighted, series: series, best: Math.max.apply(null, series), last: h[h.length - 1].date };
+  }).filter(Boolean).sort((a, b) => (a.last < b.last ? 1 : a.last > b.last ? -1 : 0)), [logs]);
+
+  return html`
+    <main className="screen progress">
+      <header className="pagehead"><h1 className="display page-title">Progress</h1></header>
+      ${!lifts.length ? html`<p className="empty">Log your first session and every lift will show up here with its trend.</p>` : null}
+
+      ${prs.length ? html`
+        <section aria-labelledby="pr-h">
+          <h2 id="pr-h" className="section-title">Recent PRs</h2>
+          <ul className="pr-list">
+            ${prs.slice(0, 6).map((p, i) => html`
+              <li key=${i}>
+                <button className="pr-row" onClick=${() => openMove(p.key)}>
+                  <span><span className="pr-name">${M[p.key].name}</span><span className="hint">${fmtDay(p.date)}</span></span>
+                  <span className="pr-val">${p.weighted ? fmtEst(p.value) + "kg" : fmtNum(p.value) + " reps"}<span className="pr-delta">${fmtDelta(p.value - p.prev, p.weighted)}</span></span>
+                </button>
+              </li>`)}
+          </ul>
+        </section>` : null}
+
+      ${lifts.length ? html`
+        <section aria-labelledby="lifts-h">
+          <h2 id="lifts-h" className="section-title">Lifts</h2>
+          <p className="hint">Weighted lifts show estimated one-rep max, so a heavier set of 6 and a lighter set of 12 compare fairly.</p>
+          <ul className="lift-list">
+            ${lifts.map((l) => html`
+              <li key=${l.key}>
+                <button className="lift-row" onClick=${() => openMove(l.key)}>
+                  <span className="lift-text"><span className="lift-name">${M[l.key].name}</span><span className="hint">${l.h.length} ${l.h.length === 1 ? "session" : "sessions"}, last ${fmtShort(l.last)}</span></span>
+                  <${Sparkline} values=${l.series.slice(-12)} />
+                  <span className="lift-best">${l.weighted ? fmtEst(l.best) : fmtNum(l.best)}<span className="lift-unit">${l.weighted ? "kg" : " reps"}</span></span>
+                </button>
+              </li>`)}
+          </ul>
+        </section>` : null}
+    </main>`;
+}
+
+function MoveDetail({ logs, move, onBack }) {
+  const mv = M[move];
+  const h = historyOf(logs, move);
+  const weighted = isWeighted(h);
+  const metrics = weighted
+    ? [["e1", "Est. max"], ["top", "Top set"], ["vol", "Volume"]]
+    : [["reps", "Best set"], ["total", "Total reps"]];
+  const [metric, setMetric] = useState(metrics[0][0]);
+  const val = (s) => metric === "e1" ? bestOf(s.sets, true) : metric === "top" ? topSet(s.sets).w
+    : metric === "vol" ? volumeOf(s.sets) : metric === "reps" ? bestOf(s.sets, false) : s.sets.reduce((t, x) => t + x.r, 0);
+  let run = 0;
+  const points = h.map((s, i) => { const y = val(s); const pr = i > 0 && y > run + 0.01; run = Math.max(run, y); return { date: s.date, y: y, pr: pr }; });
+  const unit = metric === "reps" || metric === "total" ? " reps" : "kg";
+  const bestE = weighted ? Math.max.apply(null, h.map((s) => bestOf(s.sets, true))) : 0;
+  const heaviest = weighted ? h.reduce((b, s) => { const t = topSet(s.sets); return !b || t.w > b.w || (t.w === b.w && t.r > b.r) ? t : b; }, null) : null;
+  const label = (metrics.find((m) => m[0] === metric) || metrics[0])[1];
+
+  return html`
+    <main className="screen detail">
+      <header className="dayhead">
+        <button className="back-btn" onClick=${onBack}>${Icon.back}<span>Progress</span></button>
+        <h1 className="display day-title">${mv.name}</h1>
+      </header>
+      ${h.length ? html`
+        <div className="stat-row">
+          ${weighted ? html`
+            <div><span className="display stat-num">${fmtEst(bestE)}<small>kg</small></span><span className="stat-label">best est. max</span></div>
+            <div><span className="display stat-num">${fmtNum(heaviest.w)}<small>×${heaviest.r}</small></span><span className="stat-label">heaviest set</span></div>` : html`
+            <div><span className="display stat-num">${fmtNum(Math.max.apply(null, h.map((s) => bestOf(s.sets, false))))}</span><span className="stat-label">best set, reps</span></div>`}
+          <div><span className="display stat-num">${h.length}</span><span className="stat-label">sessions</span></div>
+        </div>
+        <div className="seg-control" role="tablist" aria-label="Chart metric">
+          ${metrics.map(([k, l]) => html`<button key=${k} role="tab" aria-selected=${metric === k} className=${metric === k ? "is-on" : ""} onClick=${() => setMetric(k)}>${l}</button>`)}
+        </div>
+        <${Chart} points=${points} unit=${unit} label=${label} fmt=${metric === "top" ? fmtNum : (v) => Math.round(v).toLocaleString("en-GB")} />
+        <h2 className="section-title">History</h2>
+        <ul className="hist-list">
+          ${h.slice().reverse().map((s) => html`
+            <li key=${s.date}>
+              <span className="hist-date">${fmtDay(s.date)}${s.dl ? html`<span className="tag-deload">Deload</span>` : null}</span>
+              <span className="hist-sets">${summarise(s.sets)}</span>
+              ${s.note ? html`<span className="hint">${s.note}</span>` : null}
+            </li>`)}
+        </ul>` : html`<p className="empty">No sets logged for this one yet.</p>`}
+    </main>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* Settings                                                            */
+/* ------------------------------------------------------------------ */
+function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, onImported }) {
+  const set = (patch) => setSettings((s) => Object.assign({}, s, patch));
+  const fileRef = useRef(null);
+  const swapCount = Object.keys(swaps).length;
+
+  const exportData = () => {
+    const data = { app: "sculptor", version: 2, exportedAt: new Date().toISOString() };
+    ["logs", "sessions", "swaps", "settings", "food", "cardio"].forEach((k) => { data[k] = load(k, null); });
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "sculptor-backup-" + today + ".json";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    notify("Backup exported.");
+  };
+  const importData = (file) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(reader.result);
+        if (data.app !== "sculptor" || data.version !== 2) throw new Error("wrong file");
+        ["logs", "sessions", "swaps", "settings", "food", "cardio"].forEach((k) => { if (data[k] != null) save(k, data[k]); });
+        onImported();
+      } catch (e) { notify("That file isn't a Sculptor v2 backup. Choose a file exported from this version."); }
+    };
+    reader.readAsText(file);
+  };
+
+  return html`
+    <main className="screen settings">
+      <header className="pagehead"><h1 className="display page-title">Settings</h1></header>
+
+      <section className="panel" aria-labelledby="blk-h">
+        <h2 id="blk-h" className="section-title">Training block</h2>
+        <p className="panel-text">You're in block ${b.block}, ${b.deload ? "deload week" : "week " + (b.week + 1) + " of " + b.weeks}. Each block builds effort week by week, then deloads.</p>
+        <label className="form-field">
+          <span>Block started (week beginning)</span>
+          <input type="date" value=${settings.blockStart} onChange=${(e) => { if (isISO(e.target.value)) set({ blockStart: mondayOf(e.target.value), blockOffset: 0 }); }} />
+        </label>
+        <label className="form-field">
+          <span>Building weeks before each deload</span>
+          <select value=${settings.loadWeeks} onChange=${(e) => set({ loadWeeks: Number(e.target.value) })}>
+            ${[3, 4, 5, 6].map((n) => html`<option key=${n} value=${n}>${n} weeks, then deload</option>`)}
+          </select>
+        </label>
+        <div className="btn-row">
+          ${!b.deload ? html`<button className="secondary" onClick=${() => set({ blockStart: addDays(mondayOf(today), -7 * b.loadWeeks), blockOffset: b.block - 1 })}>Deload this week</button>` : null}
+          ${b.week > 0 ? html`<button className="secondary" onClick=${() => set({ blockStart: mondayOf(today), blockOffset: b.block })}>Start block ${b.block + 1} this week</button>` : null}
+        </div>
+      </section>
+
+      <section className="panel" aria-labelledby="timer-h">
+        <h2 id="timer-h" className="section-title">Rest timer</h2>
+        <${Toggle} label="Sound when rest is up" checked=${settings.sound} onChange=${(v) => set({ sound: v })} />
+        <${Toggle} label="Vibrate when rest is up" hint="Android only" checked=${settings.vibrate} onChange=${(v) => set({ vibrate: v })} />
+        <${Toggle} label="Keep screen on during a session" hint="So the timer stays visible between sets" checked=${settings.wakeLock} onChange=${(v) => set({ wakeLock: v })} />
+      </section>
+
+      <section className="panel" aria-labelledby="swap-h">
+        <h2 id="swap-h" className="section-title">Exercise swaps</h2>
+        <p className="panel-text">${swapCount ? swapCount + (swapCount === 1 ? " exercise is" : " exercises are") + " swapped from the programme." : "Everything is running as programmed. Use Swap on any exercise during a session."}</p>
+        ${swapCount ? html`<button className="secondary" onClick=${() => setSwaps({})}>Reset to the programme</button>` : null}
+      </section>
+
+      <section className="panel" aria-labelledby="cyc-set-h">
+        <h2 id="cyc-set-h" className="section-title">Cycle</h2>
+        <label className="form-field">
+          <span>First day of your last period</span>
+          <input type="date" value=${settings.cycleStart || ""} onChange=${(e) => set({ cycleStart: e.target.value })} />
+        </label>
+        <label className="form-field">
+          <span>Cycle length in days</span>
+          <input inputMode="numeric" value=${settings.cycleLength} onChange=${(e) => set({ cycleLength: e.target.value.replace(/[^\d]/g, "") })} />
+        </label>
+        <p className="hint">Phase effects on strength are small and vary a lot between people. Use this to explain a flat day, not to plan around.</p>
+        ${settings.cycleStart ? html`<button className="text-btn" onClick=${() => set({ cycleStart: "" })}>Hide cycle from home</button>` : null}
+      </section>
+
+      <section className="panel" aria-labelledby="food-set-h">
+        <h2 id="food-set-h" className="section-title">Food targets</h2>
+        <div className="form-grid">
+          ${FOOD_KEYS.map(([k, label, unit]) => html`
+            <label key=${k} className="form-field">
+              <span>${label} (${unit})</span>
+              <input inputMode="numeric" value=${settings.targets[k]} onChange=${(e) => { const v = num(e.target.value); set({ targets: Object.assign({}, settings.targets, { [k]: v }) }); }} />
+            </label>`)}
+        </div>
+      </section>
+
+      <section className="panel" aria-labelledby="data-h">
+        <h2 id="data-h" className="section-title">Your data</h2>
+        <p className="panel-text">Everything is stored on this phone.${settings.migratedAt ? " Your history from the old version was brought across on " + fmtDay(settings.migratedAt) + "." : ""} Export a backup now and then.</p>
+        <div className="btn-row">
+          <button className="secondary" onClick=${exportData}>Export backup</button>
+          <button className="secondary" onClick=${() => fileRef.current && fileRef.current.click()}>Restore from backup</button>
+        </div>
+        <input ref=${fileRef} type="file" accept="application/json,.json" hidden onChange=${(e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ""; }} />
+      </section>
+      <p className="hint center">Sculptor's Playbook, version 2</p>
+    </main>`;
+}
+
+/* ------------------------------------------------------------------ */
+/* App shell                                                           */
+/* ------------------------------------------------------------------ */
+function App() {
+  const today = useToday();
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef(null);
+  const notify = useCallback((msg, kind) => {
+    setToast({ msg: msg, kind: kind });
+    clearTimeout(toastTimer.current);
+    toastTimer.current = setTimeout(() => setToast(null), kind === "pr" ? 4500 : 3000);
+  }, []);
+  const saveFailed = () => notify("Couldn't save to this phone's storage. Export a backup and free up some space.");
+
+  const [logs, setLogs] = useStored("logs", {}, saveFailed);
+  const [sessions, setSessions] = useStored("sessions", [], saveFailed);
+  const [swaps, setSwaps] = useStored("swaps", {}, saveFailed);
+  const [rawSettings, setSettings] = useStored("settings", defaultSettings(), saveFailed);
+  const [food, setFood] = useStored("food", {}, saveFailed);
+  const [cardio, setCardio] = useStored("cardio", {}, saveFailed);
+  const [timer, setTimer] = useStored("timer", null);
+  const settings = useMemo(() => Object.assign(defaultSettings(), rawSettings, { targets: Object.assign({}, DEFAULT_TARGETS, rawSettings.targets || {}) }), [rawSettings]);
+  const b = blockInfo(settings, today);
+
+  const [route, setRoute] = useState(() => (history.state && history.state.tab ? history.state : { tab: "train", day: null, move: null }));
+  useEffect(() => {
+    history.replaceState(route, "");
+    const onPop = (e) => setRoute(e.state || { tab: "train", day: null, move: null });
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+  useEffect(() => { window.scrollTo(0, 0); }, [route.tab, route.day, route.move]);
+  const push = (r) => { history.pushState(r, ""); setRoute(r); };
+  const back = () => history.back();
+  const goTab = (tab) => { const r = { tab: tab, day: null, move: null }; history.replaceState(r, ""); setRoute(r); };
+
+  const startTimer = useCallback((secs, label) => setTimer({ endAt: Date.now() + secs * 1000, total: secs, label: label }), []);
+
+  const day = route.day ? DAYS.find((d) => d.id === route.day) : null;
+  let screen;
+  if (day) {
+    screen = html`<${DayView} day=${day} today=${today} b=${b} logs=${logs} setLogs=${setLogs} swaps=${swaps} setSwaps=${setSwaps}
+      sessions=${sessions} setSessions=${setSessions} cardio=${cardio} setCardio=${setCardio}
+      startTimer=${startTimer} notify=${notify} settings=${settings} onBack=${back} />`;
+  } else if (route.move && M[route.move]) {
+    screen = html`<${MoveDetail} logs=${logs} move=${route.move} onBack=${back} />`;
+  } else if (route.tab === "progress") {
+    screen = html`<${Progress} logs=${logs} openMove=${(k) => push({ tab: "progress", day: null, move: k })} />`;
+  } else if (route.tab === "settings") {
+    screen = html`<${Settings} settings=${settings} setSettings=${setSettings} b=${b} today=${today} swaps=${swaps} setSwaps=${setSwaps}
+      notify=${notify} onImported=${() => location.reload()} />`;
+  } else {
+    screen = html`<${Home} today=${today} b=${b} settings=${settings} setSettings=${setSettings} sessions=${sessions}
+      food=${food} setFood=${setFood} swaps=${swaps} openDay=${(id) => push({ tab: "train", day: id, move: null })} />`;
+  }
+  const showNav = !day;
+
+  return html`
+    <div className=${"app" + (showNav ? " has-nav" : "") + (timer ? " has-timer" : "")}>
+      <${Toast} toast=${toast} />
+      ${screen}
+      <${TimerBar} timer=${timer} setTimer=${setTimer} settings=${settings} raised=${showNav} />
+      ${showNav ? html`<${Nav} tab=${route.tab} go=${goTab} />` : null}
+    </div>`;
+}
+
+init();
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+})();
