@@ -251,7 +251,7 @@ function defaultSettings() {
   return { blockStart: mondayOf(todayISO()), blockOffset: 0, loadWeeks: 4, sound: true, vibrate: true, wakeLock: true,
     cycleStart: "", cycleLength: 28, targets: DEFAULT_TARGETS, migratedAt: null,
     accent: "rose", haptics: true, autoScroll: true, warmups: true, showFood: true,
-    barWeight: 20, plates: ALL_PLATES, dayNames: {}, exNames: {}, rest: {} };
+    barWeight: 20, plates: ALL_PLATES, dayNames: {}, exNames: {}, rest: {}, inc: {} };
 }
 
 /* Display names. Custom names are set from Settings and the exercise sheet;
@@ -271,11 +271,20 @@ function platesFor(total, bar, avail) {
   return { per: per, list: list, left: left };
 }
 
+/* The smallest step up for a lift. Barbells follow your smallest plates;
+   machines, cables and dumbbells can be set per exercise. */
+function incFor(key, st) {
+  const mv = M[key];
+  if (st.inc && num(st.inc[key]) > 0) return num(st.inc[key]);
+  if (mv.bar) return st.plates.length ? Math.min.apply(null, st.plates) * 2 : 2.5;
+  return mv.inc;
+}
+
 /* Warm-up ramp towards the first working weight. Not logged. */
-function warmupsFor(w, mv, st) {
+function warmupsFor(w, mv, st, inc) {
   if (!w) return [];
   const bar = mv.bar ? st.barWeight : 0;
-  const smallest = mv.bar ? 5 : (mv.inc || 1); // round warm-ups to friendly jumps
+  const smallest = mv.bar ? 5 : (inc || mv.inc || 1); // round warm-ups to friendly jumps
   const round = (x) => Math.max(bar, Math.round(x / smallest) * smallest);
   const plan = mv.bar ? [[0, 10], [0.5, 6], [0.7, 4], [0.85, 2]] : [[0.5, 8], [0.7, 4], [0.85, 2]];
   const out = [];
@@ -387,7 +396,7 @@ function prEvents(logs) {
   return out.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 }
 
-function suggest(slot, mv, prev, b) {
+function suggest(slot, mv, prev, b, inc) {
   const lo = slot.reps[0], hi = slot.reps[1];
   const n = b.deload ? Math.ceil(slot.sets / 2) : slot.sets;
   const fill = (w, r) => Array.from({ length: n }, () => ({ w: w, r: r }));
@@ -404,7 +413,12 @@ function suggest(slot, mv, prev, b) {
       text: (topW ? "Deload: " + fmtNum(topW) + "kg for " : "Deload: ") + lo + " smooth reps, well short of failure." };
   }
   const atTop = prev.sets.filter((s) => s.w === topW);
-  const toppedOut = atTop.length >= slot.sets && atTop.every((s) => s.r >= hi);
+  // When the next step is a big jump (over 10%), go past the range first so the new weight is manageable
+  const big = !!(inc && topW && inc / topW > 0.1);
+  const need = big ? hi + 2 : hi;
+  const toppedOut = atTop.length >= slot.sets && atTop.every((s) => s.r >= need);
+  const reachedRange = atTop.length >= slot.sets && atTop.every((s) => s.r >= hi);
+  const fellShort = atTop.length > 0 && atTop.every((s) => s.r < lo);
   const rows = Array.from({ length: n }, (_, i) => ({ w: prev.sets[i] ? prev.sets[i].w || "" : topW || "", r: prev.sets[i] ? prev.sets[i].r : lo }));
   if (!topW) {
     if (toppedOut) return { n: n, rows: rows, text: mv.bw
@@ -412,9 +426,18 @@ function suggest(slot, mv, prev, b) {
       : "You hit the top of the range. Add some weight this time." };
     return { n: n, rows: rows, text: "Beat last time by a rep somewhere." };
   }
-  if (toppedOut && mv.inc) {
-    const w = Math.round((topW + mv.inc) * 100) / 100;
-    return { n: n, rows: fill(w, lo), text: "You hit " + hi + " on every set. Go up to " + fmtNum(w) + "kg and build back up from " + lo + "." };
+  if (toppedOut && inc) {
+    const w = Math.round((topW + inc) * 100) / 100;
+    return { n: n, rows: fill(w, lo), text: big
+      ? "You hit " + need + " on every set. Go up to " + fmtNum(w) + "kg. It's a big jump on this one, so fewer reps is expected. Build back up from there."
+      : "You hit " + hi + " on every set. Go up to " + fmtNum(w) + "kg and build back up from " + lo + "." };
+  }
+  if (big && reachedRange) {
+    return { n: n, rows: rows, text: "Stay at " + fmtNum(topW) + "kg. The next step up is a big jump, so push to " + need + " on every set first." };
+  }
+  if (fellShort && inc && topW - inc > 0) {
+    const w = Math.round((topW - inc) * 100) / 100;
+    return { n: n, rows: fill(w, hi), text: "Last time landed under " + lo + " at " + fmtNum(topW) + "kg. Drop back to " + fmtNum(w) + "kg and push the reps higher before trying it again." };
   }
   return { n: n, rows: rows, text: "Stay at " + fmtNum(topW) + "kg and add a rep where you can." };
 }
@@ -867,6 +890,13 @@ function DayView({ day, today, b, logs, setLogs, swaps, setSwaps, sessions, setS
     setSettings((s) => { const n = Object.assign({}, s.exNames); if (v && v !== M[optMove].name) n[optMove] = v; else delete n[optMove]; return Object.assign({}, s, { exNames: n }); });
     notify(v ? "Renamed." : "Name reset.");
   };
+  const [incDraft, setIncDraft] = useState("");
+  useEffect(() => { if (optMove) setIncDraft(settings.inc[optMove] ? String(settings.inc[optMove]) : ""); }, [optMove]);
+  const setInc = (v) => {
+    const n = num(v);
+    setSettings((s) => { const m = Object.assign({}, s.inc); if (n > 0 && n !== M[optMove].inc) m[optMove] = n; else delete m[optMove]; return Object.assign({}, s, { inc: m }); });
+    setIncDraft(n > 0 && n !== M[optMove].inc ? String(n) : "");
+  };
   const setRest = (secs) => setSettings((s) => { const r = Object.assign({}, s.rest); if (secs === optSlot.rest) delete r[optSlot.id]; else r[optSlot.id] = secs; return Object.assign({}, s, { rest: r }); });
 
   return html`
@@ -922,6 +952,21 @@ function DayView({ day, today, b, logs, setLogs, swaps, setSwaps, sessions, setS
               </button>`)}
           </div>
           <p className="hint">Programmed: ${restLabel(optSlot.rest)}.</p>
+
+          ${M[optMove].bw ? null : M[optMove].bar ? html`
+            <h3 className="sheet-sub">Weight jump</h3>
+            <p className="hint">${fmtNum(incFor(optMove, settings))}kg, set by the smallest plates you've ticked in Settings.</p>` : html`
+            <h3 className="sheet-sub">Weight jump</h3>
+            <div className="chip-grid">
+              ${[1, 1.25, 2, 2.5, 5].map((v) => html`
+                <button key=${v} className=${"chip" + (incFor(optMove, settings) === v ? " is-on" : "")} aria-pressed=${incFor(optMove, settings) === v} onClick=${() => setInc(v)}>${fmtNum(v)}kg</button>`)}
+            </div>
+            <div className="rename-row inc-row">
+              <input className="text-input" inputMode="decimal" value=${incDraft} placeholder="Other, e.g. 4.5" aria-label="Other weight jump in kilograms"
+                onChange=${(e) => setIncDraft(e.target.value.replace(",", "."))} />
+              <button className="secondary" onClick=${() => setInc(incDraft)}>Set</button>
+            </div>
+            <p className="hint">The smallest step this machine, stack or dumbbell rack allows. Suggestions to go up use it. Default ${fmtNum(M[optMove].inc)}kg.</p>`}
 
           <h3 className="sheet-sub">Your name for it</h3>
           <div className="rename-row">
@@ -981,7 +1026,8 @@ function Exercise({ index, slot, move, rest, today, b, logs, setLogs, startTimer
   const before = hist.filter((s) => s.date < today);
   const lastShown = before[before.length - 1] || null;
   const prev = before.slice().reverse().find((s) => !s.dl) || lastShown;
-  const sug = suggest(slot, mv, prev, b);
+  const inc = incFor(move, settings);
+  const sug = suggest(slot, mv, prev, b, inc);
   const rowsN = Math.max(sug.n, entry.sets.length);
   const doneN = entry.sets.filter((s) => s.done).length;
   const complete = rowsN > 0 && doneN >= rowsN;
@@ -1037,7 +1083,7 @@ function Exercise({ index, slot, move, rest, today, b, logs, setLogs, startTimer
   const addSet = () => update((e) => { grow(e, rowsN); return e; });
   const canRemove = entry.sets.length > sug.n && !entry.sets[entry.sets.length - 1].done;
   const removeSet = () => update((e) => { e.sets.pop(); return e; });
-  const warm = slot.main && settings.warmups ? warmupsFor(weightAt(0), mv, settings) : [];
+  const warm = slot.main && settings.warmups ? warmupsFor(weightAt(0), mv, settings, inc) : [];
 
   if (!open) {
     return html`
@@ -1279,6 +1325,7 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
   const swapCount = Object.keys(swaps).length;
   const nameCount = Object.keys(settings.exNames).length;
   const restCount = Object.keys(settings.rest).length;
+  const incCount = Object.keys(settings.inc).length;
   const dayCustom = Object.keys(settings.dayNames).length;
   const setDayName = (id, v) => { const n = Object.assign({}, settings.dayNames); if (v.trim()) n[id] = v; else delete n[id]; set({ dayNames: n }); };
   const togglePlate = (p) => { const has = settings.plates.indexOf(p) !== -1; set({ plates: has ? settings.plates.filter((x) => x !== p) : settings.plates.concat([p]).sort((a, c) => c - a) }); };
@@ -1383,13 +1430,14 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
 
       <section className="panel" aria-labelledby="ex-h">
         <h2 id="ex-h" className="section-title">Exercise changes</h2>
-        <p className="panel-text">${swapCount || nameCount || restCount
-          ? [swapCount ? swapCount + " swapped" : "", nameCount ? nameCount + " renamed" : "", restCount ? restCount + " with custom rest" : ""].filter(Boolean).join(", ") + "."
-          : "Everything is as programmed. Tap Edit on any exercise during a session to swap it, rename it or change its rest."}</p>
+        <p className="panel-text">${swapCount || nameCount || restCount || incCount
+          ? [swapCount ? swapCount + " swapped" : "", nameCount ? nameCount + " renamed" : "", restCount ? restCount + " with custom rest" : "", incCount ? incCount + " with a custom weight jump" : ""].filter(Boolean).join(", ") + "."
+          : "Everything is as programmed. Tap Edit on any exercise during a session to swap it, rename it, or change its rest or weight jump."}</p>
         <div className="btn-row">
           ${swapCount ? html`<button className="secondary" onClick=${() => setSwaps({})}>Undo swaps</button>` : null}
           ${nameCount ? html`<button className="secondary" onClick=${() => set({ exNames: {} })}>Undo renames</button>` : null}
           ${restCount ? html`<button className="secondary" onClick=${() => set({ rest: {} })}>Undo rest changes</button>` : null}
+          ${incCount ? html`<button className="secondary" onClick=${() => set({ inc: {} })}>Undo weight jumps</button>` : null}
         </div>
       </section>
 
@@ -1429,7 +1477,7 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
         </div>
         <input ref=${fileRef} type="file" accept="application/json,.json" hidden onChange=${(e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ""; }} />
       </section>
-      <p className="hint center">Sculptor's Playbook, version 2.1</p>
+      <p className="hint center">Sculptor's Playbook, version 2.2</p>
     </main>`;
 }
 
@@ -1459,7 +1507,7 @@ function App() {
     const d = defaultSettings();
     const s = Object.assign(d, rawSettings);
     s.targets = Object.assign({}, DEFAULT_TARGETS, rawSettings.targets || {});
-    ["dayNames", "exNames", "rest"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
+    ["dayNames", "exNames", "rest", "inc"].forEach((k) => { if (!s[k] || typeof s[k] !== "object") s[k] = {}; });
     if (!Array.isArray(s.plates)) s.plates = ALL_PLATES;
     return s;
   }, [rawSettings]);
