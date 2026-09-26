@@ -76,7 +76,7 @@ const M = {
 /* moves[0] is the default; the rest are swaps.                        */
 /* ------------------------------------------------------------------ */
 const DAYS = [
-  { id: 1, dow: 1, name: "Wingspan", focus: "Back for width",
+  { id: 1, dow: 2, name: "Wingspan", focus: "Back for width",
     intro: "Lats lead today. Pulldowns go first while you're fresh.",
     cardio: "Rowing pairs well with back day.",
     slots: [
@@ -93,7 +93,7 @@ const DAYS = [
       { id: "1f", moves: ["face-pull", "rear-delt-fly", "cable-rear-delt"], sets: 3, reps: [15, 20], rest: 60,
         cue: "Pull towards your eyebrows with elbows high, then rotate your hands back." },
     ] },
-  { id: 2, dow: 2, name: "Foundation", focus: "Heavy glutes",
+  { id: 2, dow: 1, name: "Foundation", focus: "Heavy glutes",
     intro: "Your heaviest glute lift of the week, then deep single-leg work.",
     cardio: "Stairmaster or incline walk.",
     slots: [
@@ -177,15 +177,16 @@ const RECHARGE = { id: 7, dow: 6, name: "Recharge", focus: "Easy cardio or rest"
   intro: "Let your glutes recover. Move easy at a pace you could chat at, or rest. Both count.", cardio: "" };
 const CARDIO_OPTIONS = ["Bike", "Easy row", "Flat walk", "Swim", "Rest"];
 const SPARE_GLUTES = "Bike or easy row for now, to spare your glutes.";
+const byDow = (list) => list.slice().sort((a, b) => a.dow - b.dow);
 function planDays(st) {
-  if (st.saturday !== "cardio") return DAYS;
+  if (st.saturday !== "cardio") return byDow(DAYS);
   const tweak = (d, slotId, sets) => Object.assign({}, d, { cardio: SPARE_GLUTES,
     slots: d.slots.map((s) => (s.id === slotId ? Object.assign({}, s, { sets: sets }) : s)) });
-  return DAYS.filter((d) => d.id !== 6)
+  return byDow(DAYS.filter((d) => d.id !== 6)
     .map((d) => (d.id === 2 ? tweak(d, "2d", 4) : d.id === 4 ? tweak(d, "4e", 3) : d))
-    .concat([RECHARGE]);
+    .concat([RECHARGE]));
 }
-let PLAN = DAYS;
+let PLAN = byDow(DAYS);
 
 /* Old exercise IDs from v1, mapped to movements so history carries over. */
 const LEGACY = {
@@ -1546,7 +1547,7 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
         </div>
         <input ref=${fileRef} type="file" accept="application/json,.json" hidden onChange=${(e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ""; }} />
       </section>
-      <p className="hint center">Sculptor's Playbook, version 2.3</p>
+      <p className="hint center">Sculptor's Playbook, version 2.4</p>
     </main>`;
 }
 
