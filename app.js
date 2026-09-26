@@ -170,6 +170,23 @@ const DAYS = [
     ] },
 ];
 
+/* Saturday as a recovery day. While it's on, a set of abduction moves to
+   Tuesday and Thursday so the upper-glute work isn't lost, and the glute-day
+   finishers switch away from stairs. Shelf comes back from Settings. */
+const RECHARGE = { id: 7, dow: 6, name: "Recharge", focus: "Easy cardio or rest", kind: "cardio", slots: [],
+  intro: "Let your glutes recover. Move easy at a pace you could chat at, or rest. Both count.", cardio: "" };
+const CARDIO_OPTIONS = ["Bike", "Easy row", "Flat walk", "Swim", "Rest"];
+const SPARE_GLUTES = "Bike or easy row for now, to spare your glutes.";
+function planDays(st) {
+  if (st.saturday !== "cardio") return DAYS;
+  const tweak = (d, slotId, sets) => Object.assign({}, d, { cardio: SPARE_GLUTES,
+    slots: d.slots.map((s) => (s.id === slotId ? Object.assign({}, s, { sets: sets }) : s)) });
+  return DAYS.filter((d) => d.id !== 6)
+    .map((d) => (d.id === 2 ? tweak(d, "2d", 4) : d.id === 4 ? tweak(d, "4e", 3) : d))
+    .concat([RECHARGE]);
+}
+let PLAN = DAYS;
+
 /* Old exercise IDs from v1, mapped to movements so history carries over. */
 const LEGACY = {
   "1a": "hip-thrust", "1b": "bss", "1c": "rdl", "1d": "step-up", "1e": "kickback",
@@ -251,7 +268,7 @@ function defaultSettings() {
   return { blockStart: mondayOf(todayISO()), blockOffset: 0, loadWeeks: 4, sound: true, vibrate: true, wakeLock: true,
     cycleStart: "", cycleLength: 28, targets: DEFAULT_TARGETS, migratedAt: null,
     accent: "rose", haptics: true, autoScroll: true, warmups: true, showFood: true,
-    barWeight: 20, plates: ALL_PLATES, dayNames: {}, exNames: {}, rest: {}, inc: {} };
+    barWeight: 20, plates: ALL_PLATES, dayNames: {}, exNames: {}, rest: {}, inc: {}, saturday: "cardio" };
 }
 
 /* Display names. Custom names are set from Settings and the exercise sheet;
@@ -636,8 +653,8 @@ function Home({ today, b, settings, setSettings, sessions, logs, food, setFood, 
   const weekStart = mondayOf(today), weekEnd = addDays(weekStart, 6);
   const doneOn = (id) => sessions.filter((s) => s.day === id && s.date >= weekStart && s.date <= weekEnd).map((s) => s.date).sort().pop();
   const dow = parse(today).getDay();
-  const todays = DAYS.find((d) => d.dow === dow);
-  const pending = DAYS.filter((d) => !doneOn(d.id));
+  const todays = PLAN.find((d) => d.dow === dow);
+  const pending = PLAN.filter((d) => !doneOn(d.id));
   const hero = todays && !doneOn(todays.id) ? todays : pending.find((d) => d.dow > dow) || pending[0] || null;
   const heroLead = !hero ? "Week complete" : hero === todays ? WEEKDAYS[dow] + ", " + hero.focus.toLowerCase() : (todays ? "Up next, " : "Rest day. Up next, ") + hero.focus.toLowerCase();
   const logged = hero ? setsToday(hero, swaps, logs, today) : 0;
@@ -654,13 +671,13 @@ function Home({ today, b, settings, setSettings, sessions, logs, food, setFood, 
         ${hero ? html`
           <h1 id="hero-name" className="display hero-name">${dayName(hero)}</h1>
           <p className="hero-focus">${hero.intro}</p>
-          <p className="hero-list">${hero.slots.map((sl, i) => (i ? inSentence(exName(moveOfSlot(sl, swaps))) : exName(moveOfSlot(sl, swaps)))).join(", ")}.</p>
+          <p className="hero-list">${hero.kind === "cardio" ? CARDIO_OPTIONS.map((o, i) => (i ? o.toLowerCase() : o)).join(", ") + "." : hero.slots.map((sl, i) => (i ? inSentence(exName(moveOfSlot(sl, swaps))) : exName(moveOfSlot(sl, swaps)))).join(", ") + "."}</p>
           <div className="hero-cta">
-            <button className="primary" onClick=${() => openDay(hero.id)}>${logged ? "Resume session" : "Start session"}</button>
+            <button className="primary" onClick=${() => openDay(hero.id)}>${hero.kind === "cardio" ? "Log it" : logged ? "Resume session" : "Start session"}</button>
             ${logged ? html`<span className="hint">${logged} ${logged === 1 ? "set" : "sets"} logged so far</span>` : null}
           </div>` : html`
-          <h1 id="hero-name" className="display hero-name">All six done</h1>
-          <p className="hero-focus">Rest up. Next week opens with ${dayName(DAYS[0])}.</p>`}
+          <h1 id="hero-name" className="display hero-name">Week done</h1>
+          <p className="hero-focus">Rest up. Next week opens with ${dayName(PLAN[0])}.</p>`}
       </section>
 
       <section className=${"block" + (b.deload ? " block-deload" : "")} aria-label="Training block">
@@ -677,7 +694,7 @@ function Home({ today, b, settings, setSettings, sessions, logs, food, setFood, 
       <section aria-labelledby="week-h">
         <h2 id="week-h" className="section-title">This week</h2>
         <ul className="days">
-          ${DAYS.map((d) => {
+          ${PLAN.map((d) => {
             const done = doneOn(d.id);
             return html`
               <li key=${d.id}>
@@ -828,6 +845,45 @@ async function shareSession(d, notify) {
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 3000);
   notify("Card saved to your downloads.");
+}
+
+/* ------------------------------------------------------------------ */
+/* Recharge: an easy cardio or rest day                                */
+/* ------------------------------------------------------------------ */
+function CardioView({ day, today, sessions, setSessions, notify, onBack }) {
+  const done = sessions.find((s) => s.day === day.id && s.date === today);
+  const [act, setAct] = useState(done ? done.activity : null);
+  const [mins, setMins] = useState(done && done.mins ? String(done.mins) : "");
+  const save = () => {
+    const a = act || "Rest";
+    setSessions((prev) => prev.filter((s) => !(s.day === day.id && s.date === today))
+      .concat([{ day: day.id, date: today, ts: Date.now(), kind: "cardio", activity: a, mins: a === "Rest" ? null : num(mins) || null }]));
+    notify(a === "Rest" ? "Rest day logged." : a + " logged.");
+    onBack();
+  };
+  return html`
+    <main className="screen dayview">
+      <header className="dayhead">
+        <button className="back-btn" onClick=${onBack}>${Icon.back}<span>Back</span></button>
+        <p className="day-focus-line">${day.focus}</p>
+        <h1 className="display day-title">${dayName(day)}</h1>
+        <p className="day-intro">${day.intro}</p>
+      </header>
+      <section className="panel" aria-labelledby="act-h">
+        <h2 id="act-h" className="section-title">What did you do?</h2>
+        <div className="chip-grid" role="radiogroup" aria-label="Activity">
+          ${CARDIO_OPTIONS.map((o) => html`<button key=${o} role="radio" aria-checked=${act === o} className=${"chip" + (act === o ? " is-on" : "")} onClick=${() => setAct(o)}>${o}</button>`)}
+        </div>
+        ${act && act !== "Rest" ? html`
+          <label className="form-field">
+            <span>Minutes (optional)</span>
+            <input inputMode="numeric" value=${mins} onChange=${(e) => setMins(e.target.value.replace(/[^\d]/g, ""))} />
+          </label>` : null}
+        <p className="hint">Stairs and steep inclines are glute work, so leave them out while your glutes recover.</p>
+        <button className="primary wide finish" onClick=${save}>${done ? "Update" : "Log it"}</button>
+      </section>
+      <p className="hint center">Want Shelf back? Switch Saturday to lifting in Settings.</p>
+    </main>`;
 }
 
 /* ------------------------------------------------------------------ */
@@ -1202,8 +1258,13 @@ const CAL_WEEKS = 12;
 function TrainingCalendar({ sessions, today }) {
   const start = addDays(mondayOf(today), -7 * (CAL_WEEKS - 1));
   const by = {};
-  sessions.forEach((s) => { if (s.date >= start) { by[s.date] = by[s.date] || { dl: false }; if (s.deload) by[s.date].dl = true; } });
-  const count = sessions.filter((s) => s.date >= start && s.date <= today).length;
+  sessions.forEach((s) => {
+    if (s.date < start) return;
+    const cur = by[s.date] || { dl: false, lift: false };
+    if (s.kind === "cardio") { by[s.date] = cur; cur.cardio = true; return; }
+    cur.lift = true; if (s.deload) cur.dl = true; by[s.date] = cur;
+  });
+  const count = sessions.filter((s) => s.date >= start && s.date <= today && s.kind !== "cardio").length;
   const rows = ["M", "T", "W", "T", "F", "S", "S"];
   return html`
     <section aria-labelledby="cal-h">
@@ -1215,11 +1276,11 @@ function TrainingCalendar({ sessions, today }) {
             ${Array.from({ length: CAL_WEEKS }, (_, wi) => {
               const d = addDays(start, wi * 7 + di);
               const hit = by[d];
-              return html`<span key=${wi} className=${"cal-cell" + (hit ? (hit.dl ? " is-deload" : " is-on") : "") + (d === today ? " is-today" : "") + (d > today ? " is-future" : "")}></span>`;
+              return html`<span key=${wi} className=${"cal-cell" + (hit ? (hit.lift ? (hit.dl ? " is-deload" : " is-on") : " is-cardio") : "") + (d === today ? " is-today" : "") + (d > today ? " is-future" : "")}></span>`;
             })}
           </div>`)}
       </div>
-      <p className="hint">${count} ${count === 1 ? "session" : "sessions"} since ${fmtShort(start)}. Deload sessions show in green.</p>
+      <p className="hint">${count} lifting ${count === 1 ? "session" : "sessions"} since ${fmtShort(start)}. Deloads show in green, recharge days in grey.</p>
     </section>`;
 }
 
@@ -1371,6 +1432,14 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
             ${[3, 4, 5, 6].map((n) => html`<option key=${n} value=${n}>${n} weeks, then deload</option>`)}
           </select>
         </label>
+        <p className="form-label">Saturday</p>
+        <div className="seg-control" role="radiogroup" aria-label="Saturday">
+          <button role="radio" aria-checked=${settings.saturday === "cardio"} className=${settings.saturday === "cardio" ? "is-on" : ""} onClick=${() => set({ saturday: "cardio" })}>Recharge</button>
+          <button role="radio" aria-checked=${settings.saturday !== "cardio"} className=${settings.saturday !== "cardio" ? "is-on" : ""} onClick=${() => set({ saturday: "shelf" })}>Shelf</button>
+        </div>
+        <p className="hint">${settings.saturday === "cardio"
+          ? "Easy cardio or rest on Saturdays. Tuesday and Thursday each get an extra set of abduction, and their finishers switch to bike or rowing."
+          : "Saturday is the Shelf glute session. Switch to Recharge if your glutes need more recovery."}</p>
         <div className="btn-row">
           ${!b.deload ? html`<button className="secondary" onClick=${() => set({ blockStart: addDays(mondayOf(today), -7 * b.loadWeeks), blockOffset: b.block - 1 })}>Deload this week</button>` : null}
           ${b.week > 0 ? html`<button className="secondary" onClick=${() => set({ blockStart: mondayOf(today), blockOffset: b.block })}>Start block ${b.block + 1} this week</button>` : null}
@@ -1390,7 +1459,7 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
       <section className="panel" aria-labelledby="names-h">
         <h2 id="names-h" className="section-title">Day names</h2>
         <p className="panel-text">Call your days whatever you like. Leave one blank to use the default.</p>
-        ${DAYS.map((d) => html`
+        ${PLAN.map((d) => html`
           <label key=${d.id} className="form-field">
             <span>${WEEKDAYS[d.dow]}, ${d.focus.toLowerCase()}</span>
             <input value=${settings.dayNames[d.id] || ""} placeholder=${d.name} maxLength="24" onChange=${(e) => setDayName(d.id, e.target.value)} />
@@ -1477,7 +1546,7 @@ function Settings({ settings, setSettings, b, today, swaps, setSwaps, notify, on
         </div>
         <input ref=${fileRef} type="file" accept="application/json,.json" hidden onChange=${(e) => { if (e.target.files[0]) importData(e.target.files[0]); e.target.value = ""; }} />
       </section>
-      <p className="hint center">Sculptor's Playbook, version 2.2</p>
+      <p className="hint center">Sculptor's Playbook, version 2.3</p>
     </main>`;
 }
 
@@ -1513,6 +1582,7 @@ function App() {
   }, [rawSettings]);
   CUSTOM.ex = settings.exNames;
   CUSTOM.day = settings.dayNames;
+  PLAN = planDays(settings);
   const b = blockInfo(settings, today);
 
   useEffect(() => {
@@ -1534,9 +1604,11 @@ function App() {
   const startTimer = useCallback((secs, label) => setTimer({ endAt: Date.now() + secs * 1000, total: secs, label: label }), []);
   const onPR = useCallback((p) => { setPr(p); buzz(settings.haptics, [30, 50, 30, 50, 90]); }, [settings.haptics]);
 
-  const day = route.day ? DAYS.find((d) => d.id === route.day) : null;
+  const day = route.day ? PLAN.find((d) => d.id === route.day) : null;
   let screen;
-  if (day) {
+  if (day && day.kind === "cardio") {
+    screen = html`<${CardioView} day=${day} today=${today} sessions=${sessions} setSessions=${setSessions} notify=${notify} onBack=${back} />`;
+  } else if (day) {
     screen = html`<${DayView} day=${day} today=${today} b=${b} logs=${logs} setLogs=${setLogs} swaps=${swaps} setSwaps=${setSwaps}
       sessions=${sessions} setSessions=${setSessions} cardio=${cardio} setCardio=${setCardio}
       startTimer=${startTimer} notify=${notify} onPR=${onPR} settings=${settings} setSettings=${setSettings} onBack=${back} />`;

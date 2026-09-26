@@ -1,7 +1,7 @@
 /* Sculptor's Playbook service worker.
    Your own files: network first, so updates show up straight away; cached copy when offline.
    Fonts and libraries from CDNs: cache first. */
-const CACHE = "sculptor-v2.2.0";
+const CACHE = "sculptor-v2.3.0";
 const SHELL = ["./", "./index.html", "./app.js", "./manifest.json", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", (e) => {
